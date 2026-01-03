@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Take Home Pay Calculator (2025/26)</title>
+    <meta name="description" content="Calculate your take home pay in England including Tax, NI, Student Loans and Pension deductions.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom range slider styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 2px;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-sterling-sign text-2xl text-indigo-200"></i>
+                <h1 class="text-xl font-bold tracking-tight">PayCalc UK <span class="text-indigo-300 font-normal text-sm ml-2 hidden sm:inline">2025/26 England</span></h1>
+            </div>
+            <button onclick="copyLink()" class="text-sm bg-indigo-600 hover:bg-indigo-500 transition px-3 py-1.5 rounded-md flex items-center gap-2 border border-indigo-500">
+                <i class="fa-solid fa-link"></i> <span class="hidden sm:inline">Share Calculation</span><span class="sm:hidden">Share</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Inputs Column -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Main Salary Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-wallet text-indigo-600"></i> Income & Tax Code
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Annual Gross Salary (£)</label>
+                            <div class="relative rounded-md shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 sm:text-sm">£</span>
+                                </div>
+                                <input type="number" id="grossSalary" class="block w-full rounded-md border-slate-300 pl-7 py-2.5 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border" placeholder="35000" oninput="calculate()">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Tax Code</label>
+                                <input type="text" id="taxCode" class="block w-full rounded-md border-slate-300 py-2.5 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border uppercase px-3" value="1257L" oninput="calculate()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Age Group</label>
+                                <select id="ageGroup" class="block w-full rounded-md border-slate-300 py-2.5 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-2" onchange="calculate()">
+                                    <option value="standard">Under State Pension Age</option>
+                                    <option value="pensioner">State Pension Age+</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 mt-2">
+                            <input type="checkbox" id="blindAllowance" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onchange="calculate()">
+                            <label for="blindAllowance" class="text-sm text-slate-600">Blind Person's Allowance</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deductions Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-piggy-bank text-indigo-600"></i> Pension & Sacrifice
+                    </h2>
+
+                    <div class="space-y-5">
+                        <!-- Pension -->
+                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Pension Contribution</label>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div class="relative">
+                                    <input type="number" id="pensionAmount" class="block w-full rounded-md border-slate-300 py-2 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3" placeholder="5" oninput="calculate()">
+                                    <div class="absolute inset-y-0 right-0 flex items-center">
+                                        <select id="pensionUnit" class="h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500" onchange="calculate()">
+                                            <option value="percent">%</option>
+                                            <option value="fixed">£/yr</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <select id="pensionType" class="block w-full rounded-md border-slate-300 py-2 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-2" onchange="calculate()">
+                                    <option value="auto_enrollment">Auto Enrollment (Net)</option>
+                                    <option value="salary_sacrifice">Salary Sacrifice</option>
+                                    <option value="net_pay">Net Pay Arrangement</option>
+                                    <option value="relief_at_source">Relief at Source</option>
+                                </select>
+                            </div>
+                            <p class="text-xs text-slate-500" id="pensionNote">Contributions taken from net pay. Provider adds tax relief.</p>
+                        </div>
+
+                        <!-- Salary Sacrifice -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Other Salary Sacrifice (Annual)</label>
+                            <div class="relative rounded-md shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 sm:text-sm">£</span>
+                                </div>
+                                <input type="number" id="otherSalarySacrifice" class="block w-full rounded-md border-slate-300 pl-7 py-2.5 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border" placeholder="0" oninput="calculate()">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">E.g. Cycle to Work, EV Schemes. Reduces Tax & NI.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Loans & Benefits -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Loans & Benefits
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Student Loans</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="loanPlan1" class="form-checkbox text-indigo-600 rounded" onchange="handleLoanChange('1')">
+                                    <span class="ml-2 text-sm text-slate-700">Plan 1 <span class="text-xs text-slate-500">(Pre-2012)</span></span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="loanPlan2" class="form-checkbox text-indigo-600 rounded" onchange="handleLoanChange('2')">
+                                    <span class="ml-2 text-sm text-slate-700">Plan 2 <span class="text-xs text-slate-500">(2012-2023)</span></span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="loanPlan4" class="form-checkbox text-indigo-600 rounded" onchange="handleLoanChange('4')">
+                                    <span class="ml-2 text-sm text-slate-700">Plan 4 <span class="text-xs text-slate-500">(Scotland)</span></span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="loanPlan5" class="form-checkbox text-indigo-600 rounded" onchange="handleLoanChange('5')">
+                                    <span class="ml-2 text-sm text-slate-700">Plan 5 <span class="text-xs text-slate-500">(Aug 2023+)</span></span>
+                                </label>
+                                <label class="inline-flex items-center sm:col-span-2 mt-2 sm:mt-0">
+                                    <input type="checkbox" id="loanPostgrad" class="form-checkbox text-indigo-600 rounded" onchange="calculate()">
+                                    <span class="ml-2 text-sm text-slate-700">Postgraduate Loan</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Taxable Benefits (Annual)</label>
+                            <div class="relative rounded-md shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 sm:text-sm">£</span>
+                                </div>
+                                <input type="number" id="taxableBenefits" class="block w-full rounded-md border-slate-300 pl-7 py-2.5 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border" placeholder="0" oninput="calculate()">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">E.g. Company car, Health insurance. Increases Tax only.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Results Column -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Highlights Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-indigo-600 text-white rounded-xl shadow p-5 flex flex-col justify-between transform transition hover:scale-105 duration-200">
+                        <p class="text-indigo-100 text-sm font-medium uppercase tracking-wider">Yearly Net</p>
+                        <p class="text-2xl lg:text-3xl font-bold mt-1" id="valYearly">£0</p>
+                        <p class="text-xs text-indigo-200 mt-2">Take Home</p>
+                    </div>
+                    <div class="bg-white text-slate-800 rounded-xl shadow border border-slate-200 p-5 flex flex-col justify-between">
+                        <p class="text-slate-500 text-sm font-medium uppercase tracking-wider">Monthly Net</p>
+                        <p class="text-2xl lg:text-3xl font-bold mt-1 text-indigo-600" id="valMonthly">£0</p>
+                        <p class="text-xs text-slate-400 mt-2">Take Home</p>
+                    </div>
+                    <div class="bg-white text-slate-800 rounded-xl shadow border border-slate-200 p-5 flex flex-col justify-between">
+                        <p class="text-slate-500 text-sm font-medium uppercase tracking-wider">Weekly Net</p>
+                        <p class="text-2xl lg:text-3xl font-bold mt-1 text-indigo-600" id="valWeekly">£0</p>
+                        <p class="text-xs text-slate-400 mt-2">Take Home</p>
+                    </div>
+                </div>
+
+                <!-- Chart & Breakdown -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <!-- Breakdown Table -->
+                        <div class="order-2 md:order-1">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Payslip Breakdown</h3>
+                            <div class="overflow-hidden rounded-lg border border-slate-200">
+                                <table class="min-w-full divide-y divide-slate-200">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Item</th>
+                                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Yearly</th>
+                                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Monthly</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-slate-200 text-sm">
+                                        <tr>
+                                            <td class="px-4 py-2 text-slate-900 font-medium">Gross Pay</td>
+                                            <td class="px-4 py-2 text-right text-slate-600" id="rowGrossY">£0</td>
+                                            <td class="px-4 py-2 text-right text-slate-600" id="rowGrossM">£0</td>
+                                        </tr>
+                                        <tr class="bg-slate-50/50">
+                                            <td class="px-4 py-2 text-slate-900">Taxable Income</td>
+                                            <td class="px-4 py-2 text-right text-slate-500" id="rowTaxableY">£0</td>
+                                            <td class="px-4 py-2 text-right text-slate-500" id="rowTaxableM">£0</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-red-600">Income Tax</td>
+                                            <td class="px-4 py-2 text-right text-red-600" id="rowTaxY">£0</td>
+                                            <td class="px-4 py-2 text-right text-red-600" id="rowTaxM">£0</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-red-600">National Insurance</td>
+                                            <td class="px-4 py-2 text-right text-red-600" id="rowNIY">£0</td>
+                                            <td class="px-4 py-2 text-right text-red-600" id="rowNIM">£0</td>
+                                        </tr>
+                                        <tr id="rowStudentLoan" class="hidden">
+                                            <td class="px-4 py-2 text-red-600">Student Loan</td>
+                                            <td class="px-4 py-2 text-right text-red-600" id="rowLoanY">£0</td>
+                                            <td class="px-4 py-2 text-right text-red-600" id="rowLoanM">£0</td>
+                                        </tr>
+                                        <tr id="rowPension" class="hidden">
+                                            <td class="px-4 py-2 text-amber-600">Pension Deduction</td>
+                                            <td class="px-4 py-2 text-right text-amber-600" id="rowPensionY">£0</td>
+                                            <td class="px-4 py-2 text-right text-amber-600" id="rowPensionM">£0</td>
+                                        </tr>
+                                        <tr class="bg-indigo-50 font-bold">
+                                            <td class="px-4 py-3 text-indigo-900">Net Pay</td>
+                                            <td class="px-4 py-3 text-right text-indigo-700" id="rowNetY">£0</td>
+                                            <td class="px-4 py-3 text-right text-indigo-700" id="rowNetM">£0</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Chart -->
+                        <div class="order-1 md:order-2 flex flex-col items-center justify-center">
+                            <div class="chart-container">
+                                <canvas id="payChart"></canvas>
+                            </div>
+                            <div class="mt-4 text-center text-xs text-slate-500">
+                                <span class="inline-block w-3 h-3 bg-indigo-500 rounded-full mr-1"></span> Net Pay
+                                <span class="inline-block w-3 h-3 bg-red-500 rounded-full mr-1 ml-3"></span> Tax & NI
+                                <span class="inline-block w-3 h-3 bg-amber-500 rounded-full mr-1 ml-3"></span> Pension/Other
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+                    <p class="font-semibold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> Calculation Notes (2025/26)</p>
+                    <ul class="list-disc list-inside space-y-1 ml-1 text-blue-700 opacity-90">
+                        <li>Standard Personal Allowance is £12,570. Tapers by £1 for every £2 earned over £100,000.</li>
+                        <li>Employee Class 1 NI Rate is 8% (earnings £12,570-£50,270) and 2% above.</li>
+                        <li>Student Loan Plan 1 Threshold: £26,065. Plan 2: £28,470. Plan 4: £31,395. Plan 5: £25,000.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-slate-500 text-sm">Calculations are estimates for the 2025/2026 tax year.</p>
+            <p class="text-slate-400 text-xs">Run locally in browser.</p>
+        </div>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 transition-transform duration-300 z-50 flex items-center gap-3">
+        <i class="fa-solid fa-check text-green-400"></i>
+        <span>Link copied to clipboard!</span>
+    </div>
+
+    <script>
+        // --- Constants for 2025/26 ---
+        const TAX_YEAR = {
+            personalAllowance: 12570,
+            blindAllowance: 3130, // 2025/26
+            bands: [
+                { limit: 37700, rate: 0.20 }, // Basic Rate Band width (over allowance)
+                { limit: 125140, rate: 0.40 }, // Higher Rate Threshold (Total income)
+                // Above is 45%
+            ],
+            ni: {
+                primaryThreshold: 12570,
+                upperLimit: 50270,
+                rateMain: 0.08, // 8%
+                rateUpper: 0.02
+            },
+            studentLoan: {
+                plan1: { threshold: 26065, rate: 0.09 },
+                plan2: { threshold: 28470, rate: 0.09 },
+                plan4: { threshold: 31395, rate: 0.09 },
+                plan5: { threshold: 25000, rate: 0.09 },
+                postgrad: { threshold: 21000, rate: 0.06 }
+            }
+        };
+
+        // --- Chart Instance ---
+        let payChart = null;
+
+        // --- UI Logic ---
+        function handleLoanChange(plan) {
+            // Ensure mutually exclusive undergrad plans (Plan 1, 2, 4, 5)
+            // Postgrad can be combined.
+            const plans = ['1', '2', '4', '5'];
+            if (document.getElementById(`loanPlan${plan}`).checked) {
+                plans.forEach(p => {
+                    if (p !== plan) document.getElementById(`loanPlan${p}`).checked = false;
+                });
+            }
+            calculate();
+        }
+
+        function copyLink() {
+            const url = new URL(window.location);
+            // Inputs are already synced to URL by calculate()
+            navigator.clipboard.writeText(url.href).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.remove('translate-y-20');
+                setTimeout(() => toast.classList.add('translate-y-20'), 3000);
+            });
+        }
+
+        // --- Calculation Logic ---
+        function calculate() {
+            // 1. Get Inputs
+            const gross = parseFloat(document.getElementById('grossSalary').value) || 0;
+            const taxCodeStr = document.getElementById('taxCode').value.toUpperCase();
+            const ageGroup = document.getElementById('ageGroup').value;
+            const isBlind = document.getElementById('blindAllowance').checked;
+            
+            const pensionAmountInput = parseFloat(document.getElementById('pensionAmount').value) || 0;
+            const pensionUnit = document.getElementById('pensionUnit').value;
+            const pensionType = document.getElementById('pensionType').value;
+            
+            const otherSalSac = parseFloat(document.getElementById('otherSalarySacrifice').value) || 0;
+            const taxBenefits = parseFloat(document.getElementById('taxableBenefits').value) || 0;
+
+            const loanPlans = {
+                1: document.getElementById('loanPlan1').checked,
+                2: document.getElementById('loanPlan2').checked,
+                4: document.getElementById('loanPlan4').checked,
+                5: document.getElementById('loanPlan5').checked,
+                pg: document.getElementById('loanPostgrad').checked
+            };
+
+            // 2. Initial Setup
+            let annualGross = gross;
+            let niableGross = gross - otherSalSac; // Salary sacrifice reduces NIable pay
+            let pensionDeduction = 0;
+            let pensionIsSalSac = false;
+            let pensionIsNetPay = false;
+            let pensionIsReliefSource = false;
+
+            // 3. Calculate Pension
+            if (pensionAmountInput > 0) {
+                let amount = 0;
+                if (pensionUnit === 'percent') {
+                    // Usually % of gross. Some schemes use qualifying earnings, but % of gross is standard safest bet for simple calc
+                    amount = gross * (pensionAmountInput / 100);
+                } else {
+                    amount = pensionAmountInput;
+                }
+
+                if (pensionType === 'salary_sacrifice') {
+                    // Reduces Gross for Tax AND NI
+                    pensionIsSalSac = true;
+                    pensionDeduction = amount;
+                    niableGross -= amount; // further reduces NI pay
+                } else if (pensionType === 'net_pay' || pensionType === 'auto_enrollment') {
+                    // Reduces Gross for Tax Only (still pay NI on it)
+                    // Auto enrollment usually behaves like Net Pay or Relief at Source depending on provider.
+                    // If labelled "Net" in our select, we treat as Net Pay (Pre-Tax)
+                    pensionIsNetPay = true;
+                    pensionDeduction = amount;
+                } else if (pensionType === 'relief_at_source') {
+                    // Taken from NET pay. Provider adds 25% (which is 20% tax relief)
+                    // So if you want £100 in pot, you pay £80.
+                    // If input is "5% contribution", usually means 5% of gross goes into pot.
+                    // So employee pays 80% of that 5%.
+                    pensionIsReliefSource = true;
+                    pensionDeduction = amount * 0.8; 
+                }
+            }
+
+            // 4. Calculate National Insurance
+            // NI is calculated on `niableGross` (Gross - SalSac - PensionSalSac)
+            let niDeduction = 0;
+            if (ageGroup === 'standard') {
+                const pt = TAX_YEAR.ni.primaryThreshold;
+                const uel = TAX_YEAR.ni.upperLimit;
+                
+                if (niableGross > pt) {
+                    if (niableGross <= uel) {
+                        niDeduction = (niableGross - pt) * TAX_YEAR.ni.rateMain;
+                    } else {
+                        niDeduction = ((uel - pt) * TAX_YEAR.ni.rateMain) + ((niableGross - uel) * TAX_YEAR.ni.rateUpper);
+                    }
+                }
+            }
+
+            // 5. Calculate Taxable Income
+            // Taxable = Gross - SalSac - PensionSalSac - PensionNetPay + Benefits
+            let taxableIncome = gross - otherSalSac - (pensionIsSalSac ? pensionDeduction : 0) - (pensionIsNetPay ? pensionDeduction : 0) + taxBenefits;
+            
+            // 6. Calculate Personal Allowance from Code
+            let allowance = TAX_YEAR.personalAllowance;
+            
+            // Basic Tax Code Logic
+            const codeNumMatch = taxCodeStr.match(/\d+/);
+            const codeNum = codeNumMatch ? parseInt(codeNumMatch[0]) : 1257;
+            const codeLetter = taxCodeStr.replace(/[^A-Z]/g, '');
+
+            if (codeLetter === 'L' || codeLetter === 'M' || codeLetter === 'N') {
+                allowance = codeNum * 10;
+            } else if (codeLetter === 'T') {
+                allowance = codeNum * 10;
+            } else if (codeLetter === 'K') {
+                // Negative allowance, add to taxable income effectively
+                allowance = -(codeNum * 10);
+            } else if (codeLetter === 'BR' || codeLetter === '0T') {
+                allowance = 0;
+            }
+
+            // Blind Allowance
+            if (isBlind) allowance += TAX_YEAR.blindAllowance;
+
+            // Income > £100k Taper
+            // Adjusted Net Income for Taper = Taxable Income (before allowance) - Gift Aid (not handled) - Pension Relief at Source (grossed up)
+            // But Pension Net Pay/SalSac are already deducted from Taxable Income variable.
+            // If Relief at Source, we deduct the GROSS amount from Adjusted Net Income for taper purposes.
+            // Current `taxableIncome` doesn't include RAS deduction.
+            // However, RAS pension *does* lower Adjusted Net Income for the taper.
+            // Adjusted Net Income = Total Taxable Income - (Grossed Up RAS Pension).
+            let adjustedNetIncome = taxableIncome;
+            if (pensionIsReliefSource) {
+                // pensionDeduction is the net amount paid. Grossed up is pensionDeduction / 0.8
+                adjustedNetIncome -= (pensionDeduction / 0.8); 
+            }
+
+            if (adjustedNetIncome > 100000) {
+                const reduction = (adjustedNetIncome - 100000) / 2;
+                allowance = Math.max(0, allowance - reduction);
+            }
+
+            // 7. Calculate Tax
+            let taxDeduction = 0;
+            let incomeToTax = taxableIncome - allowance;
+
+            if (incomeToTax > 0) {
+                if (codeLetter === 'BR') {
+                    taxDeduction = incomeToTax * 0.20;
+                } else if (codeLetter === 'D0') {
+                    taxDeduction = incomeToTax * 0.40;
+                } else if (codeLetter === 'D1') {
+                    taxDeduction = incomeToTax * 0.45;
+                } else {
+                    // Standard Bands
+                    // Band widths
+                    const basicBandWidth = 37700; 
+                    // Note: The logic for bands is:
+                    // 0 - 37700 (taxable) @ 20%
+                    // 37700 - 125140 (approx) @ 40%
+                    // The 40% threshold is actually £50,270 TOTAL income. 
+                    // So taxable income between 0 and 37700 is 20%.
+                    // Taxable income between 37700 and (125140 - Allowance) is 40%? No.
+                    // The bands stack on top of the allowance.
+                    
+                    let remaining = incomeToTax;
+                    
+                    // Basic Rate
+                    let atBasic = Math.min(remaining, basicBandWidth);
+                    taxDeduction += atBasic * 0.20;
+                    remaining -= atBasic;
+
+                    // Higher Rate
+                    // The higher rate band ends at £125,140 total income.
+                    // Taxable income threshold for Additional rate = 125140 - Allowance?
+                    // No, the Additional rate starts at £125,140 regardless of allowance usually, 
+                    // BUT if allowance is 0 (due to taper), it's just £125,140.
+                    // Actually, Additional Rate applies to income over £125,140.
+                    // Since allowance is deducted, the threshold in "Taxable Income" terms is 125,140 - Allowance.
+                    // Wait, if Allowance is 0, threshold is 125,140.
+                    
+                    // Let's rely on band widths relative to the *allowance*.
+                    // Standard: Allowance 12570.
+                    // Basic (20%): 12571 to 50270 (Width 37700).
+                    // Higher (40%): 50271 to 125140 (Width 74870).
+                    // Additional (45%): Over 125140.
+                    
+                    // If allowance is reduced to 0:
+                    // Basic: 0 to 37700.
+                    // Higher: 37700 to 125140.
+                    // Additional: 125140+.
+                    
+                    // Implementation:
+                    if (remaining > 0) {
+                        // Total Income (Taxable + Allowance) check for Additional rate
+                        // Upper limit of Higher band is fixed at 125140 total income usually.
+                        // So the amount of taxable income that can be higher rate is (125140 - Allowance) - 37700.
+                        // Let's simplify: 
+                        // The 'starting point' of tax is `allowance`.
+                        // 20% band ends at `allowance + 37700`.
+                        // 40% band ends at `125140`.
+                        
+                        const higherRatethreshold = 125140 - allowance;
+                        const higherBandWidth = Math.max(0, higherRatethreshold - 37700);
+
+                        let atHigher = Math.min(remaining, higherBandWidth);
+                        taxDeduction += atHigher * 0.40;
+                        remaining -= atHigher;
+
+                        // Additional Rate
+                        if (remaining > 0) {
+                            taxDeduction += remaining * 0.45;
+                        }
+                    }
+                }
+            }
+
+            // 8. Student Loans
+            // Calculated on NIable Gross usually (Gross - SalSac).
+            // Pension Net Pay does NOT reduce student loan income.
+            let loanIncome = niableGross; 
+            let loanDeduction = 0;
+            
+            // Helper for loan calc
+            const calcPlan = (income, threshold, rate) => {
+                if (income > threshold) return (income - threshold) * rate;
+                return 0;
+            };
+
+            // Plan 1, 2, 4, 5 (Take the one with highest threshold? No, usually you pay 9% above threshold. If multiple, it's complex, but usually just one concurrent undergrad loan active or they stack logic.
+            // HMRC rule: If Plan 1 & 2, you pay 9% on income above Plan 1 threshold. 
+            // The calc is simple: 9% of (Income - Lowest Threshold of active plans).
+            // Postgrad is separate and additive.
+            
+            let thresholds = [];
+            if (loanPlans[1]) thresholds.push(TAX_YEAR.studentLoan.plan1.threshold);
+            if (loanPlans[2]) thresholds.push(TAX_YEAR.studentLoan.plan2.threshold);
+            if (loanPlans[4]) thresholds.push(TAX_YEAR.studentLoan.plan4.threshold);
+            if (loanPlans[5]) thresholds.push(TAX_YEAR.studentLoan.plan5.threshold);
+
+            if (thresholds.length > 0) {
+                const minThreshold = Math.min(...thresholds);
+                loanDeduction += calcPlan(loanIncome, minThreshold, 0.09);
+            }
+
+            if (loanPlans.pg) {
+                loanDeduction += calcPlan(loanIncome, TAX_YEAR.studentLoan.postgrad.threshold, TAX_YEAR.studentLoan.postgrad.rate);
+            }
+
+
+            // 9. Final Net Pay
+            // Start with NIable Gross (which already has SalSac deducted)
+            // Deduct Tax, NI, Student Loan, Pension (NetPay or RAS)
+            // Note: If pension was SalSac, it's already gone from niableGross.
+            
+            let netPay = niableGross - taxDeduction - niDeduction - loanDeduction;
+            
+            if (pensionIsNetPay) netPay -= pensionDeduction;
+            if (pensionIsReliefSource) netPay -= pensionDeduction; // Deduct the net contribution
+
+            // 10. Update UI
+            updateUI(gross, taxableIncome, taxDeduction, niDeduction, loanDeduction, pensionDeduction, netPay, pensionType, pensionIsSalSac);
+            
+            // 11. Update URL
+            updateURL();
+        }
+
+        function updateUI(gross, taxable, tax, ni, loan, pension, net, pensionType, pensionIsSalSac) {
+            
+            const fmt = (n) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Summary Cards
+            document.getElementById('valYearly').textContent = fmt(net);
+            document.getElementById('valMonthly').textContent = fmt(net / 12);
+            document.getElementById('valWeekly').textContent = fmt(net / 52);
+
+            // Table
+            document.getElementById('rowGrossY').textContent = fmt(gross);
+            document.getElementById('rowGrossM').textContent = fmt(gross / 12);
+
+            document.getElementById('rowTaxableY').textContent = fmt(taxable);
+            document.getElementById('rowTaxableM').textContent = fmt(taxable / 12);
+
+            document.getElementById('rowTaxY').textContent = fmt(tax);
+            document.getElementById('rowTaxM').textContent = fmt(tax / 12);
+
+            document.getElementById('rowNIY').textContent = fmt(ni);
+            document.getElementById('rowNIM').textContent = fmt(ni / 12);
+
+            // Loans
+            const loanRow = document.getElementById('rowStudentLoan');
+            if (loan > 0) {
+                loanRow.classList.remove('hidden');
+                document.getElementById('rowLoanY').textContent = fmt(loan);
+                document.getElementById('rowLoanM').textContent = fmt(loan / 12);
+            } else {
+                loanRow.classList.add('hidden');
+            }
+
+            // Pension
+            const penRow = document.getElementById('rowPension');
+            if (pension > 0) {
+                penRow.classList.remove('hidden');
+                // Check correct label
+                let label = "Pension Deduction";
+                if(pensionIsSalSac) label += " (SalSac)";
+                else if(pensionType === 'relief_at_source') label += " (Net)";
+                
+                penRow.querySelector('td').textContent = label;
+                document.getElementById('rowPensionY').textContent = fmt(pension);
+                document.getElementById('rowPensionM').textContent = fmt(pension / 12);
+            } else {
+                penRow.classList.add('hidden');
+            }
+
+            document.getElementById('rowNetY').textContent = fmt(net);
+            document.getElementById('rowNetM').textContent = fmt(net / 12);
+
+            // Chart
+            if (payChart) payChart.destroy();
+            const ctx = document.getElementById('payChart').getContext('2d');
+            
+            // Data for donut: Net, Tax, NI, Loan, Pension
+            // Note: Pension SalSac is not "deducted" from Gross in the chart visualization usually, 
+            // it just disappears from the pie. But users like to see where money went.
+            // We will base the pie on ORIGINAL GROSS.
+            
+            // Reconstruct total breakdown based on Original Gross
+            const originalGross = parseFloat(document.getElementById('grossSalary').value) || 0;
+            const otherSalSac = parseFloat(document.getElementById('otherSalarySacrifice').value) || 0;
+            
+            // Segments
+            const dataValues = [net, tax, ni];
+            const labels = ['Net Pay', 'Income Tax', 'National Insurance'];
+            const colors = ['#4f46e5', '#ef4444', '#f87171']; // Indigo, Red, Light Red
+
+            if (loan > 0) {
+                dataValues.push(loan);
+                labels.push('Student Loan');
+                colors.push('#f59e0b'); // Amber
+            }
+
+            if (pension > 0) {
+                dataValues.push(pension);
+                labels.push('Pension');
+                colors.push('#10b981'); // Emerald
+            }
+
+            if (otherSalSac > 0) {
+                dataValues.push(otherSalSac);
+                labels.push('Salary Sacrifice');
+                colors.push('#6366f1'); // Light Indigo
+            }
+
+            // Calculate "Other" (discrepancy due to benefits increasing tax but not being cash)
+            // Wait, Benefits are not cash deductions. They increase tax. We don't chart benefits.
+            // But if we chart based on Gross, and Tax is high due to benefits, the pie fits?
+            // Original Gross = Net + Tax + NI + Loan + Pension + SalSac.
+            // Does it?
+            // Net = (Gross - SalSac - PensionSalSac) - Tax - NI - Loan - PensionNet/RAS.
+            // So Gross = Net + Tax + NI + Loan + AllDeductions.
+            // So the pie should sum to Gross.
+            
+            payChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false // Using custom legend
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += fmt(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%',
+                }
+            });
+            
+            // Pension Note Update
+            const pNote = document.getElementById('pensionNote');
+            if (pensionType === 'salary_sacrifice') pNote.textContent = "Taken before tax & NI. Saves both.";
+            else if (pensionType === 'net_pay') pNote.textContent = "Taken before tax. Saves tax only.";
+            else if (pensionType === 'relief_at_source') pNote.textContent = "Taken from net. Provider claims tax relief.";
+            else pNote.textContent = "";
+        }
+
+        function updateURL() {
+            const params = new URLSearchParams();
+            params.set('g', document.getElementById('grossSalary').value);
+            params.set('tc', document.getElementById('taxCode').value);
+            params.set('ag', document.getElementById('ageGroup').value);
+            params.set('ba', document.getElementById('blindAllowance').checked);
+            
+            params.set('pa', document.getElementById('pensionAmount').value);
+            params.set('pu', document.getElementById('pensionUnit').value);
+            params.set('pt', document.getElementById('pensionType').value);
+            
+            params.set('ss', document.getElementById('otherSalarySacrifice').value);
+            params.set('tb', document.getElementById('taxableBenefits').value);
+            
+            if(document.getElementById('loanPlan1').checked) params.set('l1', '1');
+            if(document.getElementById('loanPlan2').checked) params.set('l2', '1');
+            if(document.getElementById('loanPlan4').checked) params.set('l4', '1');
+            if(document.getElementById('loanPlan5').checked) params.set('l5', '1');
+            if(document.getElementById('loanPostgrad').checked) params.set('lpg', '1');
+
+            window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+        }
+
+        function loadFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('g')) document.getElementById('grossSalary').value = params.get('g');
+            if (params.has('tc')) document.getElementById('taxCode').value = params.get('tc');
+            if (params.has('ag')) document.getElementById('ageGroup').value = params.get('ag');
+            if (params.has('ba')) document.getElementById('blindAllowance').checked = params.get('ba') === 'true';
+            
+            if (params.has('pa')) document.getElementById('pensionAmount').value = params.get('pa');
+            if (params.has('pu')) document.getElementById('pensionUnit').value = params.get('pu');
+            if (params.has('pt')) document.getElementById('pensionType').value = params.get('pt');
+            
+            if (params.has('ss')) document.getElementById('otherSalarySacrifice').value = params.get('ss');
+            if (params.has('tb')) document.getElementById('taxableBenefits').value = params.get('tb');
+            
+            if (params.has('l1')) document.getElementById('loanPlan1').checked = true;
+            if (params.has('l2')) document.getElementById('loanPlan2').checked = true;
+            if (params.has('l4')) document.getElementById('loanPlan4').checked = true;
+            if (params.has('l5')) document.getElementById('loanPlan5').checked = true;
+            if (params.has('lpg')) document.getElementById('loanPostgrad').checked = true;
+            
+            calculate();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromURL();
+            // Fallback calc if empty
+            if (!document.getElementById('grossSalary').value) {
+                // calculate(); // Don't auto calc empty, leaves 0s
+            } else {
+                calculate();
+            }
+        });
+
+    </script>
+</body>
+</html>
+
+
