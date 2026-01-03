@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Race Predictor</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --secondary: #64748b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 4px 0;
+            text-align: center;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--secondary);
+            font-size: 0.9rem;
+            margin: 0 0 24px 0;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            color: var(--secondary);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+            padding: 16px;
+            background: #f1f5f9;
+            border-radius: 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .time-inputs span {
+            font-weight: bold;
+            color: #94a3b8;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .toggle-container button {
+            flex: 1;
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--secondary);
+        }
+
+        .toggle-container button.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .results {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .results .val {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 4px 0;
+        }
+
+        .results .sub {
+            font-size: 1rem;
+            color: #1e40af;
+        }
+
+        .hidden { display: none; }
+
+        .info-box {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: var(--secondary);
+            line-height: 1.4;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Race Predictor</h1>
+    <p class="subtitle">Riegel's Power Law</p>
+
+    <label class="section-title">Prediction Formula</label>
+    <div class="toggle-container" id="formulaToggle">
+        <button id="btnAdjusted" class="active" data-val="1.08">Adjusted (1.08)</button>
+        <button id="btnOriginal" data-val="1.06">Original (1.06)</button>
+    </div>
+
+    <label class="section-title">Predicting...</label>
+    <div class="toggle-container" id="modeToggle">
+        <button id="modeDist" class="active" data-val="time">Time for Dist</button>
+        <button id="modeTime" data-val="dist">Dist for Time</button>
+    </div>
+
+    <div class="input-group">
+        <span class="section-title">Reference Performance</span>
+        <div class="grid">
+            <div>
+                <label>Distance (km)</label>
+                <input type="number" id="refDist" value="5" step="0.1">
+            </div>
+            <div>
+                <label>Time (H:M:S)</label>
+                <div class="time-inputs">
+                    <input type="number" id="refH" value="0" min="0">
+                    <input type="number" id="refM" value="30" min="0" max="59">
+                    <input type="number" id="refS" value="0" min="0" max="59">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target Distance Input (Shown when predicting Time) -->
+    <div id="targetDistContainer" class="input-group">
+        <span class="section-title">Target Goal</span>
+        <label>Target Distance (km)</label>
+        <input type="number" id="targetDist" value="10" step="0.1">
+    </div>
+
+    <!-- Target Time Input (Shown when predicting Distance) -->
+    <div id="targetTimeContainer" class="input-group hidden">
+        <span class="section-title">Target Goal</span>
+        <label>Target Duration (H:M:S)</label>
+        <div class="time-inputs">
+            <input type="number" id="goalH" value="1" min="0">
+            <input type="number" id="goalM" value="0" min="0" max="59">
+            <input type="number" id="goalS" value="0" min="0" max="59">
+        </div>
+    </div>
+
+    <div class="results">
+        <span class="section-title" id="resultLabel" style="margin-bottom: 0;">Predicted Result</span>
+        <div class="val" id="resultPrimary">--</div>
+        <div class="sub" id="resultSecondary">--</div>
+    </div>
+
+    <div class="info-box" id="infoText">
+        <b>Adjusted (1.08):</b> Better for recreational runners (~6:00/km) to account for fatigue.
+    </div>
+</div>
+
+<script>
+    const state = {
+        exponent: 1.08,
+        mode: 'time' // 'time' = predict time for distance, 'dist' = predict distance for time
+    };
+
+    // DOM Elements
+    const inputs = ['refDist', 'refH', 'refM', 'refS', 'targetDist', 'goalH', 'goalM', 'goalS'];
+    const elements = {};
+    inputs.forEach(id => elements[id] = document.getElementById(id));
+
+    const resultPrimary = document.getElementById('resultPrimary');
+    const resultSecondary = document.getElementById('resultSecondary');
+    const resultLabel = document.getElementById('resultLabel');
+    const targetDistContainer = document.getElementById('targetDistContainer');
+    const targetTimeContainer = document.getElementById('targetTimeContainer');
+
+    // Initialize
+    function init() {
+        loadLocalStorage();
+        setupEventListeners();
+        calculate();
+    }
+
+    function setupEventListeners() {
+        // Input changes
+        inputs.forEach(id => {
+            elements[id].addEventListener('input', () => {
+                saveLocalStorage();
+                calculate();
+            });
+        });
+
+        // Formula toggle
+        document.getElementById('formulaToggle').addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                state.exponent = parseFloat(e.target.dataset.val);
+                updateToggleUI('formulaToggle', e.target.id);
+                saveLocalStorage();
+                calculate();
+            }
+        });
+
+        // Mode toggle
+        document.getElementById('modeToggle').addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                state.mode = e.target.dataset.val;
+                updateToggleUI('modeToggle', e.target.id);
+                toggleModeContainers();
+                saveLocalStorage();
+                calculate();
+            }
+        });
+    }
+
+    function updateToggleUI(parentId, activeId) {
+        document.getElementById(parentId).querySelectorAll('button').forEach(btn => {
+            btn.classList.toggle('active', btn.id === activeId);
+        });
+        
+        if (parentId === 'formulaToggle') {
+            const info = document.getElementById('infoText');
+            info.innerHTML = state.exponent === 1.08 
+                ? "<b>Adjusted (1.08):</b> Better for recreational runners (~6:00/km) to account for fatigue."
+                : "<b>Original (1.06):</b> Riegel's 1977 elite-based formula. Can be over-optimistic.";
+        }
+    }
+
+    function toggleModeContainers() {
+        if (state.mode === 'time') {
+            targetDistContainer.classList.remove('hidden');
+            targetTimeContainer.classList.add('hidden');
+            resultLabel.innerText = "Predicted Time";
+        } else {
+            targetDistContainer.classList.add('hidden');
+            targetTimeContainer.classList.remove('hidden');
+            resultLabel.innerText = "Predicted Distance";
+        }
+    }
+
+    function calculate() {
+        const d1 = parseFloat(elements.refDist.value) || 0;
+        const t1 = (parseInt(elements.refH.value) || 0) * 3600 + 
+                   (parseInt(elements.refM.value) || 0) * 60 + 
+                   (parseInt(elements.refS.value) || 0);
+
+        if (d1 <= 0 || t1 <= 0) return;
+
+        if (state.mode === 'time') {
+            // Predict Time: T2 = T1 * (D2/D1)^exp
+            const d2 = parseFloat(elements.targetDist.value) || 0;
+            if (d2 <= 0) return;
+
+            const t2 = t1 * Math.pow((d2 / d1), state.exponent);
+            const paceSec = t2 / d2;
+
+            resultPrimary.innerText = formatTime(t2);
+            resultSecondary.innerText = `Pace: ${formatPace(paceSec)} min/km`;
+        } else {
+            // Predict Distance: D2 = D1 * (T2/T1)^(1/exp)
+            const t2 = (parseInt(elements.goalH.value) || 0) * 3600 + 
+                       (parseInt(elements.goalM.value) || 0) * 60 + 
+                       (parseInt(elements.goalS.value) || 0);
+            if (t2 <= 0) return;
+
+            const d2 = d1 * Math.pow((t2 / t1), (1 / state.exponent));
+            const paceSec = t2 / d2;
+
+            resultPrimary.innerText = `${d2.toFixed(2)} km`;
+            resultSecondary.innerText = `Pace: ${formatPace(paceSec)} min/km`;
+        }
+    }
+
+    function formatTime(secs) {
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        const s = Math.round(secs % 60);
+        return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+    }
+
+    function formatPace(secPerKm) {
+        const m = Math.floor(secPerKm / 60);
+        const s = Math.round(secPerKm % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function saveLocalStorage() {
+        const data = {
+            state: state,
+            inputs: {}
+        };
+        inputs.forEach(id => data.inputs[id] = elements[id].value);
+        localStorage.setItem('riegel_calc_data', JSON.stringify(data));
+    }
+
+    function loadLocalStorage() {
+        const saved = localStorage.getItem('riegel_calc_data');
+        if (!saved) return;
+
+        try {
+            const data = JSON.parse(saved);
+            // Restore state
+            state.exponent = data.state.exponent;
+            state.mode = data.state.mode;
+
+            // Restore inputs
+            Object.keys(data.inputs).forEach(id => {
+                if (elements[id]) elements[id].value = data.inputs[id];
+            });
+
+            // Restore UI state
+            updateToggleUI('formulaToggle', state.exponent === 1.08 ? 'btnAdjusted' : 'btnOriginal');
+            updateToggleUI('modeToggle', state.mode === 'time' ? 'modeDist' : 'modeTime');
+            toggleModeContainers();
+        } catch (e) {
+            console.error("Error loading saved data", e);
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>
+
