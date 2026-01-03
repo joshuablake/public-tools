@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Canvas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Custom Scrollbar for table */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .input-group:focus-within label {
+            color: #4f46e5;
+        }
+        .input-group:focus-within i {
+            color: #4f46e5;
+        }
+
+        /* Target Selection Animation */
+        .target-indicator {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">Investment Canvas</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="copyLink()" id="shareBtn" class="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-link"></i> <span>Copy Link</span>
+                </button>
+                <div class="h-4 w-px bg-slate-300"></div>
+                <button onclick="resetValues()" class="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full gap-6 grid grid-cols-1 lg:grid-cols-12">
+        
+        <!-- Left Column: Inputs -->
+        <div class="lg:col-span-4 space-y-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-900">Parameters</h2>
+                    <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full font-medium">Auto-Calculate</span>
+                </div>
+                <p class="text-sm text-slate-500 mb-6">Select the radio button next to the value you want to solve for.</p>
+
+                <!-- Input Grid -->
+                <div class="space-y-4">
+
+                    <!-- Initial Lump Sum -->
+                    <div class="input-group relative">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Initial Principal</label>
+                            <input type="radio" name="target" value="principal" class="accent-indigo-600 w-4 h-4 cursor-pointer" onchange="handleTargetChange(this)">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-sack-dollar text-slate-400 text-sm"></i>
+                            </div>
+                            <input type="number" id="principal" value="0" class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-shadow font-medium" placeholder="0" oninput="calculate()">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-slate-400 text-xs">£</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Annual Contribution -->
+                    <div class="input-group relative">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Annual Contribution (Start)</label>
+                            <input type="radio" name="target" value="contribution" class="accent-indigo-600 w-4 h-4 cursor-pointer" onchange="handleTargetChange(this)">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-hand-holding-dollar text-slate-400 text-sm"></i>
+                            </div>
+                            <input type="number" id="contribution" value="5000" class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-shadow font-medium" placeholder="0" oninput="calculate()">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-slate-400 text-xs">£</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contribution Increase % -->
+                    <div class="input-group relative">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Annual Contrib. Increase</label>
+                            <input type="radio" name="target" value="increase" class="accent-indigo-600 w-4 h-4 cursor-pointer" onchange="handleTargetChange(this)">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-arrow-trend-up text-slate-400 text-sm"></i>
+                            </div>
+                            <input type="number" id="increase" value="0" step="0.1" class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-shadow font-medium" placeholder="0" oninput="calculate()">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-slate-400 text-xs">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rate of Return -->
+                    <div class="input-group relative">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Rate of Return</label>
+                            <input type="radio" name="target" value="rate" class="accent-indigo-600 w-4 h-4 cursor-pointer" onchange="handleTargetChange(this)">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-percent text-slate-400 text-sm"></i>
+                            </div>
+                            <input type="number" id="rate" value="4" step="0.1" class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-shadow font-medium" placeholder="0" oninput="calculate()">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-slate-400 text-xs">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Years -->
+                    <div class="input-group relative">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Time Period</label>
+                            <input type="radio" name="target" value="years" class="accent-indigo-600 w-4 h-4 cursor-pointer" onchange="handleTargetChange(this)">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-calendar-days text-slate-400 text-sm"></i>
+                            </div>
+                            <input type="number" id="years" value="20" class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-shadow font-medium" placeholder="0" oninput="calculate()">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-slate-400 text-xs">Yrs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Future Value (The Result usually) -->
+                    <div class="input-group relative pt-4 border-t border-dashed border-slate-200">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-bold uppercase tracking-wide text-indigo-700">Future Value (Target)</label>
+                            <input type="radio" name="target" value="futureValue" checked class="accent-indigo-600 w-4 h-4 cursor-pointer" onchange="handleTargetChange(this)">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-bullseye text-indigo-500 text-sm"></i>
+                            </div>
+                            <input type="number" id="futureValue" class="block w-full pl-10 pr-3 py-2.5 border-2 border-indigo-100 bg-indigo-50/50 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-shadow font-bold text-indigo-900" placeholder="Calculating..." readonly oninput="calculate()">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-indigo-400 text-xs">£</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- Summary Stats (Mini) -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 mb-1">Total Principal</div>
+                    <div class="font-bold text-slate-800" id="summaryPrincipal">£0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 mb-1">Total Interest</div>
+                    <div class="font-bold text-emerald-600" id="summaryInterest">£0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Visuals & Data -->
+        <div class="lg:col-span-8 space-y-6 flex flex-col h-full">
+            
+            <!-- Graph Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-1 flex-grow min-h-[400px] flex flex-col">
+                 <div class="px-5 pt-5 pb-2">
+                    <h3 class="text-lg font-semibold text-slate-900">Growth Projection</h3>
+                 </div>
+                 <div class="relative flex-grow w-full h-full px-2 pb-2">
+                    <canvas id="growthChart"></canvas>
+                 </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[400px]">
+                <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 class="text-sm font-semibold text-slate-900">Annual Breakdown</h3>
+                    <div class="text-xs text-slate-500">Scroll to see more</div>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-grow">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 font-medium">Year</th>
+                                <th scope="col" class="px-6 py-3 font-medium">Contribution</th>
+                                <th scope="col" class="px-6 py-3 font-medium">Interest Earned</th>
+                                <th scope="col" class="px-6 py-3 font-medium">Total Interest</th>
+                                <th scope="col" class="px-6 py-3 font-medium text-right">End Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="breakdownBody" class="divide-y divide-slate-100">
+                            <!-- Rows generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // State
+        let targetVariable = 'futureValue';
+        let chartInstance = null;
+
+        // Constants
+        const INPUTS = ['principal', 'contribution', 'increase', 'rate', 'years', 'futureValue'];
+
+        // Initial Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            loadStateFromURL(); // Load state before calculating
+            updateInputStates();
+            calculate();
+        });
+
+        // Event Handlers
+        function handleTargetChange(radio) {
+            targetVariable = radio.value;
+            updateInputStates();
+            calculate();
+        }
+
+        function updateInputStates() {
+            INPUTS.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === targetVariable) {
+                    el.setAttribute('readonly', true);
+                    el.classList.add('bg-indigo-50', 'text-indigo-900', 'font-bold');
+                    el.classList.remove('bg-white');
+                    // Add border color to indicate it's the result
+                    el.parentElement.classList.add('ring-2', 'ring-indigo-100', 'rounded-lg');
+                } else {
+                    el.removeAttribute('readonly');
+                    el.classList.remove('bg-indigo-50', 'text-indigo-900', 'font-bold');
+                    el.classList.add('bg-white');
+                    el.parentElement.classList.remove('ring-2', 'ring-indigo-100', 'rounded-lg');
+                }
+            });
+        }
+
+        function resetValues() {
+            // Clear URL
+            window.history.pushState({}, document.title, window.location.pathname);
+
+            document.getElementById('principal').value = 0;
+            document.getElementById('contribution').value = 5000;
+            document.getElementById('increase').value = 0;
+            document.getElementById('rate').value = 4;
+            document.getElementById('years').value = 20;
+            document.getElementById('futureValue').value = '';
+            
+            // Reset target to FV
+            const fvRadio = document.querySelector('input[value="futureValue"]');
+            fvRadio.checked = true;
+            targetVariable = 'futureValue';
+            
+            updateInputStates();
+            calculate();
+        }
+
+        function copyLink() {
+            const btn = document.getElementById('shareBtn');
+            const originalHtml = btn.innerHTML;
+            
+            // Fallback for copy if navigator.clipboard might fail in some iframe contexts
+            // But usually this works.
+            const url = window.location.href;
+            
+            // Try modern API
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showCopied(btn, originalHtml);
+                }).catch(err => {
+                    // Fallback
+                    fallbackCopy(url, btn, originalHtml);
+                });
+            } else {
+                fallbackCopy(url, btn, originalHtml);
+            }
+        }
+
+        function fallbackCopy(text, btn, originalHtml) {
+             const textArea = document.createElement("textarea");
+             textArea.value = text;
+             document.body.appendChild(textArea);
+             textArea.select();
+             try {
+                document.execCommand('copy');
+                showCopied(btn, originalHtml);
+             } catch (err) {
+                console.error('Fallback copy failed', err);
+             }
+             document.body.removeChild(textArea);
+        }
+
+        function showCopied(btn, originalHtml) {
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i> <span class="text-emerald-600">Copied!</span>';
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+            }, 2000);
+        }
+
+        // --- URL State Management ---
+
+        function updateURLState() {
+            const params = new URLSearchParams();
+            params.set('p', document.getElementById('principal').value);
+            params.set('c', document.getElementById('contribution').value);
+            params.set('i', document.getElementById('increase').value);
+            params.set('r', document.getElementById('rate').value);
+            params.set('y', document.getElementById('years').value);
+            params.set('fv', document.getElementById('futureValue').value);
+            params.set('t', targetVariable);
+
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            // replaceState updates URL without reloading
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+        }
+
+        function loadStateFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('t')) return; // No state to load
+
+            const setVal = (key, id) => {
+                if (params.has(key)) document.getElementById(id).value = params.get(key);
+            };
+
+            setVal('p', 'principal');
+            setVal('c', 'contribution');
+            setVal('i', 'increase');
+            setVal('r', 'rate');
+            setVal('y', 'years');
+            setVal('fv', 'futureValue');
+
+            const targetParam = params.get('t');
+            if (INPUTS.includes(targetParam)) {
+                targetVariable = targetParam;
+                // Check the correct radio button
+                const radio = document.querySelector(`input[name="target"][value="${targetVariable}"]`);
+                if (radio) radio.checked = true;
+            }
+        }
+
+        // --- Core Calculation Logic ---
+
+        function getInputs() {
+            return {
+                P: parseFloat(document.getElementById('principal').value) || 0,
+                C: parseFloat(document.getElementById('contribution').value) || 0,
+                I: parseFloat(document.getElementById('increase').value) / 100 || 0,
+                R: parseFloat(document.getElementById('rate').value) / 100 || 0,
+                Y: parseFloat(document.getElementById('years').value) || 0,
+                FV: parseFloat(document.getElementById('futureValue').value) || 0
+            };
+        }
+
+        function calculateFutureValue(P, C, I, R, Y) {
+            let currentBalance = P;
+            let currentContribution = C;
+            
+            for (let t = 1; t <= Y; t++) {
+                let interest = currentBalance * R;
+                currentBalance = currentBalance * (1 + R) + currentContribution;
+                currentContribution = currentContribution * (1 + I);
+            }
+            return currentBalance;
+        }
+
+        function calculate() {
+            let vals = getInputs();
+            let result = 0;
+
+            // 1. Solve for Target
+            if (targetVariable === 'futureValue') {
+                result = calculateFutureValue(vals.P, vals.C, vals.I, vals.R, vals.Y);
+                document.getElementById('futureValue').value = result.toFixed(2);
+                vals.FV = result; 
+            } 
+            else if (targetVariable === 'principal') {
+                const fvOfContributions = calculateFutureValue(0, vals.C, vals.I, vals.R, vals.Y);
+                const growthFactor = Math.pow(1 + vals.R, vals.Y);
+                if (growthFactor === 0) result = 0; 
+                else result = (vals.FV - fvOfContributions) / growthFactor;
+                
+                document.getElementById('principal').value = result.toFixed(2);
+                vals.P = result;
+            }
+            else {
+                result = solveWithBinarySearch(targetVariable, vals);
+                
+                if (targetVariable === 'years') document.getElementById('years').value = result.toFixed(1);
+                else if (targetVariable === 'contribution') document.getElementById('contribution').value = result.toFixed(2);
+                else if (targetVariable === 'rate') document.getElementById('rate').value = (result * 100).toFixed(2);
+                else if (targetVariable === 'increase') document.getElementById('increase').value = (result * 100).toFixed(2);
+                
+                if (targetVariable === 'years') vals.Y = result;
+                else if (targetVariable === 'contribution') vals.C = result;
+                else if (targetVariable === 'rate') vals.R = result;
+                else if (targetVariable === 'increase') vals.I = result;
+            }
+
+            // 2. Generate Data for Table & Chart
+            generateBreakdown(vals);
+
+            // 3. Update URL
+            updateURLState();
+        }
+
+        function solveWithBinarySearch(target, vals) {
+            let low = 0;
+            let high = 0;
+            let tolerance = 0.01; 
+            let maxIter = 100;
+            
+            if (target === 'years') { high = 500; tolerance = 0.1; }
+            else if (target === 'rate') { low = -0.5; high = 5.0; tolerance = 0.00001; } 
+            else if (target === 'increase') { low = -0.5; high = 5.0; tolerance = 0.0001; }
+            else if (target === 'contribution') { high = vals.FV; tolerance = 1.0; }
+
+            for (let i = 0; i < maxIter; i++) {
+                let mid = (low + high) / 2;
+                
+                let p = vals.P, c = vals.C, inc = vals.I, r = vals.R, y = vals.Y;
+                
+                if (target === 'years') y = mid;
+                else if (target === 'rate') r = mid;
+                else if (target === 'increase') inc = mid;
+                else if (target === 'contribution') c = mid;
+
+                let calculatedFV = calculateFutureValue(p, c, inc, r, y);
+                
+                let diff = calculatedFV - vals.FV;
+
+                if (Math.abs(diff) < tolerance) return mid;
+
+                if (calculatedFV > vals.FV) {
+                    high = mid;
+                } else {
+                    low = mid;
+                }
+            }
+            return (low + high) / 2;
+        }
+
+        // --- Visualization & Table ---
+
+        function generateBreakdown(vals) {
+            const tableBody = document.getElementById('breakdownBody');
+            tableBody.innerHTML = '';
+
+            let currentBalance = vals.P;
+            let currentContribution = vals.C;
+            let totalPrincipal = vals.P;
+            let totalInterest = 0;
+
+            let labels = [];
+            let dataBalance = [];
+            let dataPrincipal = [];
+            let dataInterest = [];
+
+            // Year 0
+            labels.push('Start');
+            dataBalance.push(vals.P);
+            dataPrincipal.push(vals.P);
+            dataInterest.push(0);
+
+            const yearsInt = Math.ceil(vals.Y); 
+
+            for (let t = 1; t <= yearsInt; t++) {
+                let startBal = currentBalance;
+                let interest = startBal * vals.R;
+                
+                let contribution = currentContribution;
+                
+                let endBal = startBal + interest + contribution;
+
+                currentBalance = endBal;
+                totalPrincipal += contribution;
+                totalInterest += interest;
+
+                labels.push(`Year ${t}`);
+                dataBalance.push(endBal);
+                dataPrincipal.push(totalPrincipal);
+                dataInterest.push(totalInterest); 
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0";
+                row.innerHTML = `
+                    <td class="px-6 py-3 font-medium text-slate-900">${t}</td>
+                    <td class="px-6 py-3 text-slate-600">${formatMoney(contribution)}</td>
+                    <td class="px-6 py-3 text-emerald-600">+${formatMoney(interest)}</td>
+                    <td class="px-6 py-3 text-emerald-600 font-medium">${formatMoney(totalInterest)}</td>
+                    <td class="px-6 py-3 text-right font-bold text-indigo-900">${formatMoney(endBal)}</td>
+                `;
+                tableBody.appendChild(row);
+
+                currentContribution = currentContribution * (1 + vals.I);
+            }
+
+            document.getElementById('summaryPrincipal').innerText = formatMoney(totalPrincipal);
+            document.getElementById('summaryInterest').innerText = formatMoney(currentBalance - totalPrincipal);
+
+            updateChart(labels, dataBalance, dataPrincipal);
+        }
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('en-GB', {
+                style: 'currency',
+                currency: 'GBP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)'); 
+            gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Total Value',
+                            data: [],
+                            borderColor: '#4f46e5', 
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Principal Invested',
+                            data: [],
+                            borderColor: '#94a3b8', 
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 10,
+                                usePointStyle: true,
+                                font: {
+                                    family: 'Inter',
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 8,
+                                font: { family: 'Inter' },
+                                color: '#64748b'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#f1f5f9',
+                                borderDash: [2, 2],
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { family: 'Inter' },
+                                color: '#64748b',
+                                callback: function(value) {
+                                    if (value >= 1000000) return '£' + (value/1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return '£' + (value/1000).toFixed(0) + 'k';
+                                    return '£' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(labels, dataBalance, dataPrincipal) {
+            if (!chartInstance) return;
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = dataBalance;
+            chartInstance.data.datasets[1].data = dataPrincipal;
+            chartInstance.update();
+        }
+
+    </script>
+</body>
+</html>
+
+
+
