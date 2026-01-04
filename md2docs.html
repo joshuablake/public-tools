@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown <-> Docs Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Document Styles for the Preview - ensures it pastes nicely */
+        .prose-preview {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #000000;
+        }
+        .prose-preview h1 { font-size: 24pt; font-weight: bold; margin-bottom: 12pt; margin-top: 24pt; color: #111; border-bottom: 2px solid #eee; padding-bottom: 4px; }
+        .prose-preview h2 { font-size: 18pt; font-weight: bold; margin-bottom: 10pt; margin-top: 18pt; color: #222; }
+        .prose-preview h3 { font-size: 14pt; font-weight: bold; margin-bottom: 8pt; margin-top: 14pt; color: #333; }
+        .prose-preview p { margin-bottom: 12pt; }
+        
+        /* Fixed list styling */
+        .prose-preview ul, .prose-preview ol { margin-bottom: 12pt; padding-left: 24pt; }
+        .prose-preview ul { list-style-type: disc; }
+        .prose-preview ol { list-style-type: decimal; }
+        
+        .prose-preview li { margin-bottom: 4pt; }
+        .prose-preview a { color: #0563c1; text-decoration: underline; }
+        .prose-preview blockquote { border-left: 4px solid #ccc; padding-left: 12pt; margin-left: 0; color: #555; font-style: italic; }
+        .prose-preview code { background-color: #f3f4f6; padding: 2px 4px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .prose-preview pre { background-color: #f5f5f5; padding: 12pt; border-radius: 6px; overflow-x: auto; margin-bottom: 12pt; }
+        .prose-preview pre code { background-color: transparent; padding: 0; }
+        .prose-preview table { border-collapse: collapse; width: 100%; margin-bottom: 12pt; }
+        .prose-preview th, .prose-preview td { border: 1px solid #ddd; padding: 8pt; text-align: left; }
+        .prose-preview th { background-color: #f9fafb; font-weight: bold; }
+        .prose-preview img { max-width: 100%; height: auto; border-radius: 4px; }
+        .prose-preview hr { border: none; border-top: 1px solid #ccc; margin: 20pt 0; }
+
+        /* Rich Text Input Styling (for reverse mode) */
+        .rich-input {
+            outline: none;
+            min-height: 100%;
+        }
+        .rich-input:empty:before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        /* Utility for mobile height handling */
+        .h-dynamic {
+            height: calc(100vh - 4rem);
+        }
+        @media (max-width: 768px) {
+            .h-dynamic {
+                height: auto;
+                min-height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shrink-0 shadow-sm z-10">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-100 p-2 rounded-lg">
+                <i data-lucide="file-text" class="text-blue-600 w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 id="appTitle" class="text-base font-bold text-gray-800 leading-tight">MD to Docs</h1>
+                <p id="appSubtitle" class="text-xs text-gray-500">Markdown → Rich Text</p>
+            </div>
+        </div>
+        
+        <div class="flex gap-2 items-center">
+            <!-- Mode Switcher -->
+            <button onclick="toggleMode()" class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300" title="Switch Direction">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Switch Mode</span>
+            </button>
+
+            <div class="h-8 w-px bg-gray-300 mx-1"></div>
+
+            <button onclick="clearText()" class="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Clear All">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+            
+            <button id="copyBtn" onclick="handleCopy()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-all active:scale-95 text-sm">
+                <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+                <span id="copyBtnText">Copy Doc</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- Left Section (Input) -->
+        <section class="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-gray-200 bg-white h-1/2 md:h-full min-h-[300px]">
+            <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide flex justify-between items-center">
+                <span id="leftLabel">Markdown Input</span>
+                <span class="text-gray-400 text-[10px]">Source</span>
+            </div>
+            
+            <div class="flex-1 relative overflow-y-auto">
+                <!-- Mode 1: Markdown Textarea -->
+                <textarea 
+                    id="markdownInput" 
+                    class="absolute inset-0 w-full h-full p-4 resize-none outline-none font-mono text-sm text-gray-700 leading-relaxed"
+                    placeholder="Type Markdown here..."
+                    spellcheck="false"
+                ></textarea>
+
+                <!-- Mode 2: Rich Text Input -->
+                <div 
+                    id="richTextInput" 
+                    class="hidden absolute inset-0 w-full h-full p-8 outline-none prose-preview overflow-y-auto" 
+                    contenteditable="true"
+                    placeholder="Paste your Word Document or Google Doc content here..."
+                ></div>
+            </div>
+        </section>
+
+        <!-- Right Section (Output) -->
+        <section class="flex-1 flex flex-col bg-gray-100 h-1/2 md:h-full min-h-[300px] relative">
+            <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide flex justify-between items-center shadow-sm z-10">
+                <span id="rightLabel">Rich Text Preview</span>
+                <div id="copyFeedback" class="opacity-0 transition-opacity duration-300 text-green-600 font-bold flex items-center gap-1">
+                    <i data-lucide="check" class="w-3 h-3"></i> Copied!
+                </div>
+            </div>
+            
+            <!-- Container for both output types -->
+            <div class="flex-1 overflow-y-auto p-0 md:p-0 bg-gray-100 relative">
+                
+                <!-- Mode 1: Rich Text Preview (The "Paper" View) -->
+                <div id="previewContainer" class="p-4 md:p-8 min-h-full">
+                    <div class="bg-white shadow-lg rounded-sm min-h-full max-w-[850px] mx-auto p-8 md:p-12">
+                        <div id="preview" class="prose-preview outline-none" contenteditable="false"></div>
+                    </div>
+                </div>
+
+                <!-- Mode 2: Markdown Output -->
+                <textarea 
+                    id="markdownOutput" 
+                    class="hidden w-full h-full p-4 resize-none outline-none font-mono text-sm text-gray-800 bg-gray-800 text-white leading-relaxed border-none"
+                    readonly
+                    placeholder="Markdown will appear here..."
+                ></textarea>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg opacity-0 pointer-events-none transition-all duration-300 translate-y-4 z-50 flex items-center gap-3">
+        <div id="toastIconBg" class="bg-green-500 rounded-full p-1">
+            <i id="toastIcon" data-lucide="check" class="w-3 h-3 text-white"></i>
+        </div>
+        <div>
+            <p id="toastTitle" class="font-medium text-sm">Copied to clipboard!</p>
+            <p id="toastMessage" class="text-xs text-gray-400">Ready to paste.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- Init Icons ---
+        lucide.createIcons();
+
+        // --- Elements ---
+        const markdownInput = document.getElementById('markdownInput');
+        const richTextInput = document.getElementById('richTextInput');
+        
+        const preview = document.getElementById('preview');
+        const previewContainer = document.getElementById('previewContainer');
+        const markdownOutput = document.getElementById('markdownOutput');
+
+        const leftLabel = document.getElementById('leftLabel');
+        const rightLabel = document.getElementById('rightLabel');
+        const appTitle = document.getElementById('appTitle');
+        const appSubtitle = document.getElementById('appSubtitle');
+        const copyBtnText = document.getElementById('copyBtnText');
+
+        const feedback = document.getElementById('copyFeedback');
+        const toast = document.getElementById('toast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIconBg = document.getElementById('toastIconBg');
+
+        // --- State ---
+        let isReverseMode = false; // false = MD -> Doc, true = Doc -> MD
+
+        // --- Library Config ---
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+        });
+
+        const turndownService = new TurndownService({
+            headingStyle: 'atx',
+            bulletListMarker: '-',
+            codeBlockStyle: 'fenced'
+        });
+
+        // --- Logic ---
+
+        function toggleMode() {
+            isReverseMode = !isReverseMode;
+            
+            if (isReverseMode) {
+                // Switch to DOCS -> MD
+                markdownInput.classList.add('hidden');
+                richTextInput.classList.remove('hidden');
+                
+                previewContainer.classList.add('hidden');
+                markdownOutput.classList.remove('hidden');
+
+                leftLabel.textContent = "Paste Rich Text";
+                rightLabel.textContent = "Markdown Output";
+                appTitle.textContent = "Docs to MD";
+                appSubtitle.textContent = "Rich Text → Markdown";
+                copyBtnText.textContent = "Copy Markdown";
+                
+                // Clear and focus
+                richTextInput.focus();
+            } else {
+                // Switch to MD -> DOCS
+                richTextInput.classList.add('hidden');
+                markdownInput.classList.remove('hidden');
+                
+                markdownOutput.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+
+                leftLabel.textContent = "Markdown Input";
+                rightLabel.textContent = "Rich Text Preview";
+                appTitle.textContent = "MD to Docs";
+                appSubtitle.textContent = "Markdown → Rich Text";
+                copyBtnText.textContent = "Copy Doc";
+                
+                // Focus
+                markdownInput.focus();
+            }
+        }
+
+        function updateForward() {
+            // MD -> HTML
+            const rawMarkdown = markdownInput.value;
+            try {
+                const html = marked.parse(rawMarkdown);
+                preview.innerHTML = html;
+            } catch (e) {
+                preview.innerHTML = '<p style="color:red">Error parsing markdown.</p>';
+            }
+        }
+
+        function updateReverse() {
+            // HTML -> MD
+            const rawHtml = richTextInput.innerHTML;
+            try {
+                const md = turndownService.turndown(rawHtml);
+                markdownOutput.value = md;
+            } catch (e) {
+                markdownOutput.value = "Error converting to markdown.";
+            }
+        }
+
+        function clearText() {
+            // Execute clearing immediately
+            markdownInput.value = '';
+            richTextInput.innerHTML = '';
+            preview.innerHTML = '';
+            markdownOutput.value = '';
+            
+            if(isReverseMode) richTextInput.focus();
+            else markdownInput.focus();
+            
+            showToast("Cleared!", "All content removed", "success");
+        }
+
+        // --- Toast Logic ---
+        function showToast(title, msg, type = "success") {
+            toastTitle.textContent = title;
+            toastMessage.textContent = msg;
+            
+            if (type === "error") {
+                toastIconBg.classList.remove('bg-green-500');
+                toastIconBg.classList.add('bg-red-500');
+            } else {
+                toastIconBg.classList.remove('bg-red-500');
+                toastIconBg.classList.add('bg-green-500');
+            }
+
+            feedback.classList.remove('opacity-0');
+            setTimeout(() => feedback.classList.add('opacity-0'), 2000);
+
+            toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function handleCopy() {
+            if (isReverseMode) {
+                // Copy Markdown Text
+                markdownOutput.select();
+                markdownOutput.setSelectionRange(0, 99999); // Mobile
+                try {
+                    navigator.clipboard.writeText(markdownOutput.value).then(() => {
+                        showToast("Copied!", "Markdown ready to paste");
+                    });
+                } catch(err) {
+                    // Fallback
+                    document.execCommand('copy');
+                    showToast("Copied!", "Markdown ready to paste");
+                }
+            } else {
+                // Copy Rich Text (HTML)
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(preview);
+                selection.removeAllRanges();
+                selection.addRange(range);
+
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) showToast("Copied!", "Rich Text ready for Docs/Word");
+                    else showToast("Error", "Copy failed manually", "error");
+                } catch (err) {
+                    showToast("Error", "Copy failed manually", "error");
+                }
+                selection.removeAllRanges();
+            }
+        }
+
+        // --- Event Listeners ---
+        
+        // Mode 1: Listen to Textarea
+        markdownInput.addEventListener('input', updateForward);
+
+        // Mode 2: Listen to ContentEditable
+        // We listen to 'input' which captures typing, and 'paste' to handle pasted content
+        richTextInput.addEventListener('input', updateReverse);
+        richTextInput.addEventListener('paste', (e) => {
+            // Allow default paste, then trigger update
+            setTimeout(updateReverse, 0);
+        });
+        
+        // Initialize empty
+        markdownInput.value = "";
+        updateForward();
+
+    </script>
+</body>
+</html>
+
+
