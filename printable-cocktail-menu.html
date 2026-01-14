@@ -3,51 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flat Warming Cocktail Guide - A4 Printable</title>
+    <title>House warming cocktail menu</title>
     <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* A4 Dimensions: 210mm x 297mm */
         :root {
             --primary-red: #9D2235; /* Jesus College red */
             --bg-color: #ffffff;
             --text-color: #222222;
             --secondary-text: #555555;
             --instruction-bg: #f8f4f4;
+            --page-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background-color: #555; /* Dark background for screen viewing context */
+            background-color: #f0f0f0;
             font-family: 'Lato', sans-serif;
+            color: var(--text-color);
+            line-height: 1.5;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
 
+        /* Responsive Container */
         .page {
-            width: 210mm;
-            height: 296mm; /* slightly less than 297 to prevent overflow in some browsers */
             background-color: var(--bg-color);
-            margin: 20px auto;
-            position: relative;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            box-sizing: border-box;
-            padding: 15mm 15mm;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 900px; /* Comfortable reading width on desktop */
+            min-height: 100vh;
+            padding: 2rem;
             display: flex;
             flex-direction: column;
+            transition: all 0.3s ease;
         }
 
         header {
             text-align: center;
             border-bottom: 3px solid var(--primary-red);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         h1 {
             font-family: 'Playfair Display', serif;
             color: var(--primary-red);
-            font-size: 32pt;
+            font-size: clamp(24pt, 5vw, 32pt);
             margin: 0;
             line-height: 1.1;
             text-transform: uppercase;
@@ -56,93 +62,119 @@
 
         .subtitle {
             font-family: 'Playfair Display', serif;
-            color: var(--text-color);
-            font-size: 14pt;
-            margin-top: 5px;
+            font-size: 1.2rem;
+            margin-top: 0.5rem;
             font-style: italic;
+            color: var(--secondary-text);
         }
 
-        /* Layout Grid */
+        /* Flexible Content Grid */
         .content-columns {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px; /* Space between columns */
-            align-items: start;
-        }
-
-        .section {
-            break-inside: avoid; /* Try to keep sections intact when printing */
-            margin-bottom: 20px;
+            grid-template-columns: 1fr; /* Stacked by default for mobile */
+            gap: 2rem;
         }
 
         .section-title {
             font-family: 'Playfair Display', serif;
             color: var(--primary-red);
-            font-size: 18pt;
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
+            font-size: 1.6rem;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.3rem;
             margin-top: 0;
         }
 
         .drink-item {
-            margin-bottom: 18px;
-            break-inside: avoid;
-        }
-
-        .drink-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 4px;
+            margin-bottom: 1.5rem;
         }
 
         .drink-name {
             font-weight: 700;
-            font-size: 12pt;
+            font-size: 1.1rem;
             color: #000;
             text-transform: uppercase;
+            display: block;
+            margin-bottom: 0.2rem;
         }
 
         .drink-desc {
-            font-size: 10pt;
+            font-size: 0.95rem;
             color: var(--secondary-text);
             font-style: italic;
-            margin-bottom: 6px;
+            margin-bottom: 0.5rem;
         }
 
         .drink-recipe {
-            font-size: 9.5pt;
+            font-size: 0.9rem;
             color: #333;
             background-color: var(--instruction-bg);
-            padding: 8px 10px;
-            border-left: 3px solid var(--primary-red);
+            padding: 0.8rem 1rem;
+            border-left: 4px solid var(--primary-red);
             border-radius: 0 4px 4px 0;
             line-height: 1.4;
         }
 
         .footer {
             text-align: center;
-            font-size: 10pt;
+            font-size: 0.9rem;
             color: var(--primary-red);
             margin-top: auto;
-            border-top: 1px solid var(--primary-red);
-            padding-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 1.5rem;
             font-family: 'Playfair Display', serif;
+            font-style: italic;
         }
 
-        @media print {
+        /* Desktop View (Laptops/Tablets) */
+        @media screen and (min-width: 768px) {
             body {
-                background-color: transparent;
-                margin: 0;
+                padding: 2rem 1rem;
             }
             .page {
+                box-shadow: var(--page-shadow);
+                border-radius: 4px;
+                padding: 3rem;
+            }
+            .content-columns {
+                grid-template-columns: 1fr 1fr; /* Side-by-side */
+            }
+        }
+
+        /* Print Override (Enforce A4) */
+        @media print {
+            @page {
+                size: A4;
                 margin: 0;
-                box-shadow: none;
+            }
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .page {
                 width: 210mm;
                 height: 297mm;
-                padding: 10mm 15mm; /* Adjust print padding */
+                max-width: none;
+                margin: 0;
+                padding: 15mm 15mm;
+                box-shadow: none;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
             }
+            .content-columns {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            .section, .drink-item {
+                break-inside: avoid;
+            }
+            h1 { font-size: 32pt; }
+            .section-title { font-size: 18pt; }
+            .drink-name { font-size: 12pt; }
+            .drink-recipe { font-size: 9.5pt; }
+            .footer { padding-top: 10mm; margin-top: auto; }
         }
     </style>
 </head>
@@ -150,21 +182,19 @@
 
     <div class="page">
         <header>
-            <h1>Cocktails &amp; Recipes</h1>
-            <div class="subtitle">Flat Warming Party Guide</div>
+            <h1>Drinks</h1>
+            <div class="subtitle">Josh and Hena's house warming</div>
         </header>
 
         <div class="content-columns">
             
             <!-- Left Column -->
             <div class="column">
-                
-                <!-- Cocktails Section -->
                 <div class="section">
                     <div class="section-title">Cocktails</div>
                     
                     <div class="drink-item">
-                        <div class="drink-name">Whiskey Sour</div>
+                        <span class="drink-name">Whiskey Sour</span>
                         <div class="drink-desc">A classic. Bourbon balanced by sweetness and citrus.</div>
                         <div class="drink-recipe">
                             <strong>To shaker:</strong> 15ml demerara syrup, 22.5ml lemon juice, 60ml bourbon. <br>
@@ -174,7 +204,7 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Bees' Knees</div>
+                        <span class="drink-name">Bees' Knees</span>
                         <div class="drink-desc">Smooth honey sweetness. Crowd favourite.</div>
                         <div class="drink-recipe">
                             <strong>To shaker:</strong> 22.5ml honey syrup, 22.5ml lemon juice, 60ml gin, and ice. Shake till cold (30s). Strain into glass with ice.
@@ -182,7 +212,7 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Fancy Cocktail</div>
+                        <span class="drink-name">Fancy Cocktail</span>
                         <div class="drink-desc">Strong, rich, floral combination.</div>
                         <div class="drink-recipe">
                             <strong>To glass:</strong> 1 barspoon demerara syrup, 7.5ml orange liqueur (rinse spoon into glass), 45ml bourbon, 2 dashes Angostura bitter, ice. Mix.
@@ -190,7 +220,7 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Daiquiri</div>
+                        <span class="drink-name">Daiquiri</span>
                         <div class="drink-desc">Simple, sour, and strong.</div>
                         <div class="drink-recipe">
                             <strong>To shaker:</strong> 15ml simple syrup, 22.5ml lime juice, 60ml rum. Shake till cold (30s). Strain into glass with ice.
@@ -198,25 +228,22 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Baby Guinness</div>
+                        <span class="drink-name">Baby Guinness</span>
                         <div class="drink-desc">Creamy, rich coffee shot.</div>
                         <div class="drink-recipe">
                             Fill shot glass 2/3 full of Kahlua. Slowly pour Baileys over back of a spoon to float on top.
                         </div>
                     </div>
                 </div>
-
             </div>
 
             <!-- Right Column -->
             <div class="column">
-                
-                <!-- Long Drinks Section -->
                 <div class="section">
                     <div class="section-title">Long Cocktails</div>
                     
                     <div class="drink-item">
-                        <div class="drink-name">Gin Rickey</div>
+                        <span class="drink-name">Gin Rickey</span>
                         <div class="drink-desc">Cooling and refreshing.</div>
                         <div class="drink-recipe">
                             <strong>To glass:</strong> 15ml lime juice, 45ml gin (or bourbon), ice. Top with soda water, stir gently.
@@ -224,7 +251,7 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Tom Collins</div>
+                        <span class="drink-name">Tom Collins</span>
                         <div class="drink-desc">A gin and tonic, but sophisticated.</div>
                         <div class="drink-recipe">
                             <strong>To glass:</strong> 15ml simple syrup, 22.5ml lemon juice, 45ml gin, ice. Top with soda water, stir gently.
@@ -232,12 +259,11 @@
                     </div>
                 </div>
 
-                <!-- Mocktails Section -->
                 <div class="section">
                     <div class="section-title">Mocktails</div>
                     
                     <div class="drink-item">
-                        <div class="drink-name">Shirley Temple</div>
+                        <span class="drink-name">Shirley Temple</span>
                         <div class="drink-desc">Grenadine &amp; lemonade.</div>
                         <div class="drink-recipe">
                             Add 15ml grenadine to a glass of lemonade water and ice. Mix.
@@ -245,7 +271,7 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Lemon Lime Cooler</div>
+                        <span class="drink-name">Lemon Lime Cooler</span>
                         <div class="drink-desc">Citrus, syrup &amp; soda.</div>
                         <div class="drink-recipe">
                             Add 15ml lemon juice, 15ml lime juice, 15ml simple syrup to a glass of soda water and ice. Mix.
@@ -253,7 +279,7 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Orgeat Lemonade</div>
+                        <span class="drink-name">Orgeat Lemonade</span>
                         <div class="drink-desc">Almond syrup &amp; lemonade.</div>
                         <div class="drink-recipe">
                             Add 30ml lemon juice and 15ml orgeat to a glass of lemonade and ice. Mix.
@@ -261,14 +287,13 @@
                     </div>
 
                     <div class="drink-item">
-                        <div class="drink-name">Grenadine Spritzer</div>
+                        <span class="drink-name">Grenadine Spritzer</span>
                         <div class="drink-desc">Lime, grenadine &amp; tonic.</div>
                         <div class="drink-recipe">
                             Add 30ml lemon juice and 15ml grenadine to a glass of tonic water and ice. Mix.
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -279,4 +304,3 @@
 
 </body>
 </html>
-
