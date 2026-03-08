@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Growth Metric Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hide number input arrows for a cleaner look */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 font-sans text-slate-800">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-blue-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold mb-2">Growth Rate Converter</h1>
+            <p class="text-blue-100 text-sm">Convert exponentially growing quantities across different metric scales.</p>
+        </div>
+
+        <!-- Inputs Container -->
+        <div class="p-6 space-y-6">
+            
+            <!-- Global Time Unit for Rates -->
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <label for="base-time-unit" class="text-sm font-semibold text-slate-700">Rates are per:</label>
+                <select id="base-time-unit" class="px-3 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white font-medium">
+                    <option value="second">Second</option>
+                    <option value="minute">Minute</option>
+                    <option value="hour">Hour</option>
+                    <option value="day">Day</option>
+                    <option value="week">Week</option>
+                    <option value="year" selected>Year</option>
+                </select>
+            </div>
+
+            <!-- Growth Rate -->
+            <div class="relative">
+                <div class="flex justify-between items-end mb-1">
+                    <label for="rate" class="block text-sm font-semibold text-slate-700">Growth Rate</label>
+                    <div class="flex items-center space-x-2 text-xs text-slate-500">
+                        <label for="base" class="font-medium">Base:</label>
+                        <input type="text" id="base" value="e" title="Type 'e' or a number" 
+                            class="w-12 px-1 py-0.5 text-center border rounded-md border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors">
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 mb-2">Units of the given base per unit time</div>
+                <input type="number" id="rate" step="any" placeholder="e.g., 0.05"
+                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow text-lg">
+            </div>
+
+            <!-- Percentage Growth -->
+            <div class="relative">
+                <label for="percent" class="block text-sm font-semibold text-slate-700 mb-1">% Growth / Time</label>
+                <div class="text-xs text-slate-400 mb-2">Percentage increase (+) or decrease (-)</div>
+                <div class="relative">
+                    <input type="number" id="percent" step="any" placeholder="e.g., 5.12"
+                        class="w-full pl-4 pr-8 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition-shadow text-lg">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 font-bold">
+                        %
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doubling Time -->
+            <div class="relative">
+                <label for="doubling" class="block text-sm font-semibold text-slate-700 mb-1">Doubling Time</label>
+                <div class="text-xs text-slate-400 mb-2">Time required to multiply by 2 (negative = halving)</div>
+                <input type="number" id="doubling" step="any" placeholder="e.g., 13.86"
+                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-shadow text-lg">
+            </div>
+
+            <!-- Orders of Magnitude -->
+            <div class="relative">
+                <label for="orders" class="block text-sm font-semibold text-slate-700 mb-1">Orders of Magnitude / Time</label>
+                <div class="text-xs text-slate-400 mb-2">Power of 10 increase per unit time</div>
+                <input type="number" id="orders" step="any" placeholder="e.g., 0.0217"
+                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-shadow text-lg">
+            </div>
+
+            <!-- Projection Section -->
+            <div class="pt-6 border-t border-slate-200 mt-6 space-y-4">
+                <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Calculate Projection</h2>
+                <div class="flex space-x-2">
+                    <div class="w-2/3">
+                        <label for="proj-time" class="block text-xs font-semibold text-slate-700 mb-1">Time Period</label>
+                        <input type="number" id="proj-time" step="any" placeholder="e.g., 10"
+                            class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow text-lg">
+                    </div>
+                    <div class="w-1/3">
+                        <label for="proj-time-unit" class="block text-xs font-semibold text-slate-700 mb-1">Unit</label>
+                        <select id="proj-time-unit" class="w-full px-2 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium text-base">
+                            <option value="second">Seconds</option>
+                            <option value="minute">Minutes</option>
+                            <option value="hour">Hours</option>
+                            <option value="day">Days</option>
+                            <option value="week">Weeks</option>
+                            <option value="year" selected>Years</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-inner">
+                        <div class="text-xs font-semibold text-indigo-600 mb-1 uppercase tracking-wide">Doublings</div>
+                        <div id="out-doublings" class="text-xl font-bold text-indigo-900 break-all">-</div>
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-inner">
+                        <div class="text-xs font-semibold text-indigo-600 mb-1 uppercase tracking-wide">Multiplier</div>
+                        <div id="out-multiplier" class="text-xl font-bold text-indigo-900 break-all">-</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const elBase = document.getElementById('base');
+        const elRate = document.getElementById('rate');
+        const elPercent = document.getElementById('percent');
+        const elDoubling = document.getElementById('doubling');
+        const elOrders = document.getElementById('orders');
+
+        const elBaseTimeUnit = document.getElementById('base-time-unit');
+        const elProjTime = document.getElementById('proj-time');
+        const elProjTimeUnit = document.getElementById('proj-time-unit');
+        const outDoublings = document.getElementById('out-doublings');
+        const outMultiplier = document.getElementById('out-multiplier');
+
+        // Time conversion constants (in seconds)
+        const TIME_IN_SECONDS = {
+            second: 1,
+            minute: 60,
+            hour: 3600,
+            day: 86400,
+            week: 604800,
+            year: 31536000 // 365 days
+        };
+
+        // Track which input is currently driving the calculations
+        let lastEdited = elRate;
+
+        // Parse the base input (handles 'e' string natively)
+        function parseBase(str) {
+            str = str.trim().toLowerCase();
+            if (str === 'e') return Math.E;
+            let val = parseFloat(str);
+            if (!isNaN(val) && val > 0 && val !== 1) return val;
+            return Math.E;
+        }
+
+        // Format output neatly (preventing extremely long decimals, handles Infinity)
+        function format(num) {
+            if (num === Infinity) return 'Infinity';
+            if (num === -Infinity) return '-Infinity';
+            if (!Number.isFinite(num)) return '';
+            
+            // Limit to 6 significant digits and strip trailing zeros
+            let str = num.toPrecision(6);
+            return parseFloat(str).toString(); 
+        }
+
+        // Clear the other fields if the source field is emptied
+        function clearOthers(except) {
+            if (except !== elRate) elRate.value = '';
+            if (except !== elPercent) elPercent.value = '';
+            if (except !== elDoubling) elDoubling.value = '';
+            if (except !== elOrders) elOrders.value = '';
+        }
+
+        // --- Core Conversion Logic ---
+        // We use the natural log of the multiplier (lnM) as the universal intermediary.
+        // M = b^r = 1 + (P/100) = 2^(1/Td) = 10^Orders
+        // lnM = r * ln(b) = ln(1 + P/100) = ln(2) / Td = Orders * ln(10)
+
+        function updateFromRate() {
+            let val = elRate.value;
+            if (val === '-' || val === '.' || val === '-.') return; 
+            
+            let r = parseFloat(val);
+            if (isNaN(r) || r === 0) return clearOthers(elRate);
+            
+            let b = parseBase(elBase.value);
+            let lnM = r * Math.log(b);
+            
+            elPercent.value = format(100 * (Math.exp(lnM) - 1));
+            elDoubling.value = format(Math.log(2) / lnM);
+            elOrders.value = format(lnM / Math.log(10));
+        }
+
+        function updateFromPercent() {
+            let val = elPercent.value;
+            if (val === '-' || val === '.' || val === '-.') return; 
+
+            let P = parseFloat(val);
+            // If P <= -100%, the multiplier is <= 0, which breaks logs. Clear others.
+            if (isNaN(P) || P === 0 || P <= -100) return clearOthers(elPercent);
+
+            let b = parseBase(elBase.value);
+            let lnM = Math.log(1 + (P / 100));
+
+            elRate.value = format(lnM / Math.log(b));
+            elDoubling.value = format(Math.log(2) / lnM);
+            elOrders.value = format(lnM / Math.log(10));
+        }
+
+        function updateFromDoubling() {
+            let val = elDoubling.value;
+            if (val === '-' || val === '.' || val === '-.') return;
+
+            let Td = parseFloat(val);
+            if (isNaN(Td) || Td === 0) return clearOthers(elDoubling);
+            
+            let b = parseBase(elBase.value);
+            let lnM = Math.log(2) / Td;
+            
+            elRate.value = format(lnM / Math.log(b));
+            elPercent.value = format(100 * (Math.exp(lnM) - 1));
+            elOrders.value = format(lnM / Math.log(10));
+        }
+
+        function updateFromOrders() {
+            let val = elOrders.value;
+            if (val === '-' || val === '.' || val === '-.') return;
+
+            let O = parseFloat(val);
+            if (isNaN(O) || O === 0) return clearOthers(elOrders);
+            
+            let b = parseBase(elBase.value);
+            let lnM = O * Math.log(10);
+            
+            elRate.value = format(lnM / Math.log(b));
+            elPercent.value = format(100 * (Math.exp(lnM) - 1));
+            elDoubling.value = format(Math.log(2) / lnM);
+        }
+
+        // --- Projection Logic ---
+        function formatHuge(num) {
+            if (!Number.isFinite(num)) return 'Infinity';
+            if (Math.abs(num) < 1000000 && Math.abs(num) >= 0.000001 || num === 0) {
+                return parseFloat(num.toPrecision(6)).toString();
+            }
+            return num.toExponential(4);
+        }
+
+        function updateProjection() {
+            let tProjStr = elProjTime.value;
+            let tProj = parseFloat(tProjStr);
+            
+            if (isNaN(tProj) || elDoubling.value === '') {
+                outDoublings.innerText = '-';
+                outMultiplier.innerText = '-';
+                return;
+            }
+            
+            let baseSec = TIME_IN_SECONDS[elBaseTimeUnit.value];
+            let projSec = TIME_IN_SECONDS[elProjTimeUnit.value];
+            
+            // Convert projected time into base units
+            let timeInBaseUnits = tProj * (projSec / baseSec);
+            let Td = parseFloat(elDoubling.value);
+            
+            if (isNaN(Td) || Td === 0) {
+                outDoublings.innerText = '-';
+                outMultiplier.innerText = '-';
+                return;
+            }
+
+            let doublings = timeInBaseUnits / Td;
+            let multiplier = Math.pow(2, doublings);
+            
+            outDoublings.innerText = formatHuge(doublings);
+            outMultiplier.innerText = formatHuge(multiplier) + 'x';
+        }
+
+        // Attach event listeners for typing
+        elRate.addEventListener('input', () => {
+            lastEdited = elRate;
+            updateFromRate();
+            updateProjection();
+        });
+
+        elPercent.addEventListener('input', () => {
+            lastEdited = elPercent;
+            updateFromPercent();
+            updateProjection();
+        });
+
+        elDoubling.addEventListener('input', () => {
+            lastEdited = elDoubling;
+            updateFromDoubling();
+            updateProjection();
+        });
+
+        elOrders.addEventListener('input', () => {
+            lastEdited = elOrders;
+            updateFromOrders();
+            updateProjection();
+        });
+
+        // Whenever the base changes, recalculate using the most recently edited field as the source of truth
+        elBase.addEventListener('input', () => {
+            if (lastEdited === elRate && elRate.value !== '') {
+                updateFromRate();
+            } else if (lastEdited === elPercent && elPercent.value !== '') {
+                updateFromPercent();
+            } else if (lastEdited === elDoubling && elDoubling.value !== '') {
+                updateFromDoubling();
+            } else if (lastEdited === elOrders && elOrders.value !== '') {
+                updateFromOrders();
+            }
+            updateProjection();
+        });
+
+        // Projection Event Listeners
+        elBaseTimeUnit.addEventListener('change', updateProjection);
+        elProjTimeUnit.addEventListener('change', updateProjection);
+        elProjTime.addEventListener('input', updateProjection);
+
+    </script>
+</body>
+</html>
+
+
