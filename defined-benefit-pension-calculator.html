@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Public sector pension calculator</title>
+  <style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: #f7f7f7;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 2.5rem 1rem 4rem;
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 2rem;
+}
+
+h1 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  color: #555;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.scheme-toggle {
+  display: flex;
+  background: white;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0.3rem;
+  gap: 0.3rem;
+  margin-bottom: 1.25rem;
+  width: fit-content;
+}
+
+.scheme-btn {
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #666;
+  transition: all 150ms ease-out;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.scheme-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.scheme-btn.active {
+  background: #1a1a1a;
+  color: white;
+}
+
+.scheme-btn.active:hover {
+  background: #2a2a2a;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #e8e8e8;
+}
+
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #999;
+  margin: 0 0 1.4rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #2a2a2a;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.label-hint {
+  font-weight: 400;
+  color: #888;
+  font-size: 0.78rem;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-prefix,
+.input-suffix {
+  position: absolute;
+  color: #888;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.input-prefix {
+  left: 0.75rem;
+}
+
+.input-suffix {
+  right: 0.75rem;
+}
+
+input[type="number"] {
+  font-size: 16px;
+  font-family: inherit;
+  padding: 0.65rem 0.75rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  width: 100%;
+  color: #1a1a1a;
+  background: #fafafa;
+  transition: border-color 150ms ease-out, background 150ms ease-out, box-shadow 150ms ease-out;
+  min-height: 44px;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+input[type="number"].has-prefix {
+  padding-left: 1.75rem;
+}
+
+input[type="number"].has-suffix {
+  padding-right: 2.25rem;
+}
+
+input[type="number"]:hover {
+  border-color: #bbb;
+  background: white;
+}
+
+input[type="number"]:focus {
+  outline: none;
+  border-color: #3a6fd8;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(58, 111, 216, 0.12);
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 5px;
+  accent-color: #3a6fd8;
+  cursor: pointer;
+  margin-top: 0.25rem;
+  font-size: 16px;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 0.3rem;
+}
+
+.field-note {
+  font-size: 0.78rem;
+  color: #3a6fd8;
+  margin-top: 0.15rem;
+  min-height: 1.1em;
+}
+
+.field-note.warning {
+  color: #b45309;
+}
+
+.field-note.info {
+  color: #555;
+}
+
+.threshold-info {
+  background: #f5f7ff;
+  border: 1px solid #dce4f7;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: #4a6fa5;
+  line-height: 1.5;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  margin: 1.4rem 0;
+}
+
+.results-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #e8e8e8;
+}
+
+.primary-result {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.primary-label {
+  font-size: 0.875rem;
+  color: #555;
+  margin-bottom: 0.25rem;
+}
+
+.primary-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  transition: color 200ms ease-out;
+}
+
+.primary-value.reduced {
+  color: #b45309;
+}
+
+.primary-sub {
+  font-size: 1rem;
+  color: #555;
+  margin-top: 0.35rem;
+}
+
+.early-badge {
+  display: inline-block;
+  background: #fff3cd;
+  color: #92600a;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  margin-top: 0.4rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #888;
+  line-height: 1.3;
+}
+
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.stat-value.accent {
+  color: #3a6fd8;
+}
+
+.stat-value.muted {
+  color: #6b6b6b;
+  font-weight: 500;
+}
+
+.lump-card {
+  background: #f0f5ff;
+  border-radius: 12px;
+  padding: 1.4rem 1.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #d5e3fa;
+}
+
+.lump-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #3a6fd8;
+  margin: 0 0 0.75rem;
+}
+
+.lump-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.lump-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.lump-item-label {
+  font-size: 0.78rem;
+  color: #4a6fa5;
+}
+
+.lump-item-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #e8e8e8;
+}
+
+.chart-wrap {
+  margin-top: 1rem;
+  position: relative;
+  height: 240px;
+}
+
+.footnote {
+  font-size: 0.775rem;
+  color: #aaa;
+  line-height: 1.6;
+  padding: 0 0.25rem;
+}
+
+.footnote a {
+  color: #3a6fd8;
+  text-decoration: none;
+}
+
+.footnote a:hover {
+  text-decoration: underline;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 520px) {
+  body {
+    padding: 1.5rem 0.75rem 3rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .lump-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-value {
+    font-size: 2rem;
+  }
+
+  .scheme-toggle {
+    width: 100%;
+  }
+
+  .scheme-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1>Public sector pension calculator</h1>
+    <p class="subtitle">Civil Service Alpha &amp; USS &middot; All figures in today's money (real terms, inflation-adjusted)</p>
+  </header>
+
+  <div class="scheme-toggle" role="group" aria-label="Select pension scheme">
+    <button class="scheme-btn active" id="btn-alpha" type="button">Civil Service Alpha</button>
+    <button class="scheme-btn" id="btn-uss" type="button">USS (Universities)</button>
+  </div>
+
+  <div class="card">
+    <p class="section-label">Your details</p>
+    <div class="field-grid">
+
+      <div class="field">
+        <label for="age">Current age</label>
+        <div class="input-wrap">
+          <input type="number" id="age" min="16" max="74" step="1" value="35">
+        </div>
+        <span class="field-note" id="age-note"></span>
+      </div>
+
+      <div class="field">
+        <label for="npa">Normal pension age <span class="label-hint">adjustable</span></label>
+        <div class="input-wrap">
+          <input type="number" id="npa" min="55" max="75" step="1" value="67">
+        </div>
+        <span class="field-note" id="npa-note">Based on current SPA policy</span>
+      </div>
+
+      <div class="field">
+        <label for="pay">Pensionable pay <span class="label-hint">&pound;/yr</span></label>
+        <div class="input-wrap">
+          <span class="input-prefix">&pound;</span>
+          <input type="number" id="pay" min="0" max="500000" step="1000" value="35000" class="has-prefix">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="accrued">Accrued pension <span class="label-hint">&pound;/yr, today's money</span></label>
+        <div class="input-wrap">
+          <span class="input-prefix">&pound;</span>
+          <input type="number" id="accrued" min="0" max="200000" step="100" value="3000" class="has-prefix">
+        </div>
+      </div>
+
+      <div class="field full">
+        <label for="real-growth">Real pay growth <span class="label-hint">% per year above inflation</span></label>
+        <div class="input-wrap">
+          <input type="number" id="real-growth" min="-5" max="15" step="0.1" value="1" class="has-suffix" style="max-width:200px">
+          <span class="input-suffix" style="right:calc(100% - 200px + 0.75rem)">%</span>
+        </div>
+      </div>
+
+      <div class="field full hidden" id="uss-threshold-row">
+        <div class="threshold-info">
+          <strong>USS salary threshold: &pound;74,208 (2026/27).</strong> The Retirement Income Builder (DB) accrues on pay up to this limit only. Contributions above the threshold go into the Investment Builder (DC), which is not modelled here. If your pay exceeds this threshold, the pension shown is your DB portion only.
+        </div>
+      </div>
+
+    </div>
+
+    <hr class="divider">
+
+    <div class="field">
+      <label for="retire-age">Target retirement age <span class="label-hint" id="retire-age-hint">retiring at NPA</span></label>
+      <input type="range" id="retire-age" min="55" max="75" step="1" value="67">
+      <div class="range-labels">
+        <span id="range-min-label">55</span>
+        <span id="range-npa-label" style="text-align:center">NPA 67</span>
+        <span>75</span>
+      </div>
+      <span class="field-note" id="early-note"></span>
+    </div>
+
+  </div>
+
+  <div class="results-card">
+    <p class="section-label">Projected pension at retirement</p>
+    <div class="primary-result">
+      <p class="primary-label" id="result-label">Annual pension at NPA (today's money)</p>
+      <p class="primary-value" id="total-pension">&mdash;</p>
+      <p class="primary-sub" id="monthly-pension"></p>
+      <span class="early-badge hidden" id="early-badge"></span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat">
+        <span class="stat-label">Already accrued</span>
+        <span class="stat-value muted" id="stat-accrued">&mdash;</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Future accruals</span>
+        <span class="stat-value accent" id="stat-future">&mdash;</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Before reduction</span>
+        <span class="stat-value" id="stat-full">&mdash;</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Retire in</span>
+        <span class="stat-value" id="stat-year">&mdash;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="lump-card">
+    <p class="lump-label" id="lump-title">&mdash;</p>
+    <div class="lump-grid">
+      <div class="lump-item">
+        <span class="lump-item-label" id="lump-label-a">&mdash;</span>
+        <span class="lump-item-value" id="lump-val-a">&mdash;</span>
+      </div>
+      <div class="lump-item">
+        <span class="lump-item-label" id="lump-label-b">&mdash;</span>
+        <span class="lump-item-value" id="lump-val-b">&mdash;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <p class="section-label">How your pension builds year by year</p>
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+  <p class="footnote" id="footnote-text"></p>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script type="module">
+const CURRENT_YEAR = 2026
+
+const SCHEMES = {
+  alpha: {
+    accrualRate: 0.0232,
+    getNpa(age) { return Math.max(spaFromAge(age), 65) },
+    ussThreshold: null,
+    lumpSumAuto: false,
+    earlyReductionPerYear: 0.046,
+    footnote: `Alpha is a Career Average Revalued Earnings (CARE) scheme. Pension accrues at 2.32% (1/43.1) of pensionable pay per year. Active members' accrued pension is revalued by CPI each April, maintaining real value — all figures shown at today's prices. NPA = max(State Pension Age, 65). SPA defaults: born before 1960 &rarr; 66; 1960&ndash;1976 &rarr; 67; 1977 or later &rarr; 68. Early retirement from 55 (rising to 57 in 2028) with actuarial reduction; the ~4.6%/yr figure is an approximation — <a href="https://www.civilservicepensionscheme.org.uk" target="_blank">verify exact factors at CSPS &rarr;</a>. Optional commutation: surrender up to 25% of pension for a tax-free lump sum at &pound;12:&pound;1. Does not model McCloud remedy, part-time working, or Added Pension.`,
+  },
+  uss: {
+    accrualRate: 1 / 75,
+    getNpa(age) { return spaFromAge(age) },
+    ussThreshold: 74208,
+    lumpSumAuto: true,
+    earlyReductionPerYear: 0.052,
+    footnote: `USS Retirement Income Builder is a CARE scheme. Pension accrues at 1/75th of pensionable pay per year on salary up to &pound;74,208 (2026/27 threshold). Revalued by CPI (up to 5% matched; half of any excess; max 10%) — shown in today's prices throughout. An automatic tax-free lump sum of 3&times; your pension is paid at retirement. NPA is linked to State Pension Age (currently 66 for those born before 1960, 67 for 1960&ndash;1976, 68 for 1977+). Early retirement from 55 (rising to 57 in 2028); USS publishes a factor of 94.8% at 1 year early (~5.2% reduction/yr) — <a href="https://www.uss.co.uk/for-members/calculate-your-benefits/factors-used-by-uss" target="_blank">see exact USS factors &rarr;</a>. Pay above the salary threshold goes to the Investment Builder (DC), not modelled here.`,
+  },
+}
+
+let scheme = 'alpha'
+let npaUserOverride = false
+let chartInstance = null
+
+function spaFromAge(age) {
+  const birthYear = CURRENT_YEAR - age
+  if (birthYear < 1960) return 66
+  if (birthYear < 1977) return 67
+  return 68
+}
+
+function fmt(n) {
+  return '&pound;' + Math.round(n).toLocaleString('en-GB')
+}
+
+function fmtPlain(n) {
+  return '£' + Math.round(n).toLocaleString('en-GB')
+}
+
+function calcFutureAccruals(pay, g, years) {
+  const s = SCHEMES[scheme]
+  const effectivePay = s.ussThreshold ? Math.min(pay, s.ussThreshold) : pay
+  if (Math.abs(g) < 0.00001) {
+    return effectivePay * s.accrualRate * years
+  }
+  return effectivePay * s.accrualRate * ((Math.pow(1 + g, years) - 1) / g)
+}
+
+function el(id) { return document.getElementById(id) }
+
+function syncSlider(age, npa) {
+  const slider = el('retire-age')
+  const prevNpa = parseInt(slider.dataset.npa || npa)
+  slider.min = 55
+  slider.max = Math.max(npa + 8, 75)
+  // If slider was at the old NPA, snap it to the new NPA
+  if (parseInt(slider.value) === prevNpa) slider.value = npa
+  slider.dataset.npa = npa
+  el('range-min-label').textContent = 55
+  el('range-npa-label').textContent = 'NPA ' + npa
+  updateRetireHint(parseInt(slider.value), npa)
+}
+
+function updateRetireHint(retireAge, npa) {
+  const hint = el('retire-age-hint')
+  const note = el('early-note')
+  if (retireAge === npa) {
+    hint.textContent = 'retiring at NPA'
+    note.textContent = ''
+    note.className = 'field-note'
+  } else if (retireAge < npa) {
+    const yrsEarly = npa - retireAge
+    const pct = (SCHEMES[scheme].earlyReductionPerYear * yrsEarly * 100).toFixed(1)
+    hint.textContent = `age ${retireAge} \u2014 ${yrsEarly} yr${yrsEarly !== 1 ? 's' : ''} early`
+    note.textContent = `Approx. ${pct}% actuarial reduction (${(SCHEMES[scheme].earlyReductionPerYear * 100).toFixed(1)}%/yr \u2014 verify with official scheme calculator)`
+    note.className = 'field-note warning'
+  } else {
+    const yrsLate = retireAge - npa
+    hint.textContent = `age ${retireAge} \u2014 ${yrsLate} yr${yrsLate !== 1 ? 's' : ''} after NPA`
+    note.textContent = 'Late retirement uplift applies but is not modelled \u2014 use the official scheme calculator for an exact figure'
+    note.className = 'field-note info'
+  }
+}
+
+function applySchemeUI() {
+  const s = SCHEMES[scheme]
+  el('uss-threshold-row').classList.toggle('hidden', scheme !== 'uss')
+  el('footnote-text').innerHTML = s.footnote
+  if (!npaUserOverride) {
+    const age = parseFloat(el('age').value)
+    if (!isNaN(age)) {
+      const npa = s.getNpa(age)
+      el('npa').value = npa
+      updateNpaNote(age, npa)
+      syncSlider(age, npa)
+    }
+  }
+  calculate()
+}
+
+function updateNpaNote(age, npa) {
+  const spa = spaFromAge(age)
+  const note = el('npa-note')
+  if (scheme === 'alpha') {
+    note.textContent = `SPA ${spa} for your birth year \u2014 Alpha NPA = max(SPA, 65) = ${npa}`
+  } else {
+    note.textContent = `USS NPA linked to SPA \u2014 ${npa} for your birth year`
+  }
+  note.className = 'field-note'
+}
+
+function calculate() {
+  const age = parseFloat(el('age').value)
+  const npa = parseFloat(el('npa').value)
+  const pay = parseFloat(el('pay').value)
+  const accrued = parseFloat(el('accrued').value)
+  const g = parseFloat(el('real-growth').value) / 100
+  const retireAge = parseInt(el('retire-age').value)
+
+  if ([age, npa, pay, accrued, g].some(v => isNaN(v))) return
+  if (age >= retireAge) {
+    el('total-pension').innerHTML = 'Retirement age already reached'
+    return
+  }
+
+  const s = SCHEMES[scheme]
+  const yearsWorked = Math.min(Math.max(retireAge - age, 0), Math.max(npa - age, 0))
+  const future = calcFutureAccruals(pay, g, yearsWorked)
+  const fullPension = accrued + future
+
+  const isEarly = retireAge < npa
+  const isLate = retireAge > npa
+  let finalPension = fullPension
+
+  if (isEarly) {
+    const yrsEarly = npa - retireAge
+    const reduction = Math.min(s.earlyReductionPerYear * yrsEarly, 0.5)
+    finalPension = fullPension * (1 - reduction)
+  }
+
+  const monthly = finalPension / 12
+
+  // Result label
+  let label = `Annual pension at NPA ${npa} (today's money)`
+  if (isEarly) label = `Annual pension at age ${retireAge} — reduced for early retirement (today's money)`
+  if (isLate) label = `Annual pension at age ${retireAge} (today's money — late uplift not modelled)`
+  el('result-label').textContent = label
+
+  el('total-pension').innerHTML = fmt(finalPension) + ' /yr'
+  el('total-pension').className = isEarly ? 'primary-value reduced' : 'primary-value'
+  el('monthly-pension').innerHTML = fmt(monthly) + ' /month'
+
+  const badge = el('early-badge')
+  if (isEarly) {
+    const yrsEarly = npa - retireAge
+    const pct = (s.earlyReductionPerYear * yrsEarly * 100).toFixed(1)
+    badge.textContent = `~${pct}% actuarial reduction (approx.)`
+    badge.classList.remove('hidden')
+  } else {
+    badge.classList.add('hidden')
+  }
+
+  el('stat-accrued').innerHTML = fmt(accrued)
+  el('stat-future').innerHTML = fmt(future)
+  el('stat-full').innerHTML = isEarly ? fmt(fullPension) : '&mdash;'
+  el('stat-year').textContent = CURRENT_YEAR + (retireAge - age)
+
+  // Lump sum
+  if (s.lumpSumAuto) {
+    const lump = finalPension * 3
+    el('lump-title').textContent = 'Automatic retirement lump sum (tax-free)'
+    el('lump-label-a').textContent = 'Annual pension'
+    el('lump-val-a').innerHTML = fmt(finalPension) + ' /yr'
+    el('lump-label-b').textContent = 'Tax-free lump sum (3\u00d7 pension)'
+    el('lump-val-b').innerHTML = fmt(lump)
+  } else {
+    const surrendered = finalPension * 0.25
+    const lump = surrendered * 12
+    const reduced = finalPension - surrendered
+    el('lump-title').textContent = 'Optional: take 25% as tax-free lump sum'
+    el('lump-label-a').textContent = 'Reduced annual pension'
+    el('lump-val-a').innerHTML = fmt(reduced) + ' /yr'
+    el('lump-label-b').textContent = 'Tax-free lump sum (at \u00a312:\u00a31)'
+    el('lump-val-b').innerHTML = fmt(lump)
+  }
+
+  drawChart(age, npa, retireAge, pay, accrued, g)
+}
+
+function drawChart(age, npa, retireAge, pay, accrued, g) {
+  const endAge = Math.max(npa, retireAge)
+  const totalYears = endAge - age
+  const labels = []
+  const accruedSeries = []
+  const futureSeries = []
+
+  for (let yr = 0; yr <= totalYears; yr++) {
+    labels.push(age + yr)
+    accruedSeries.push(Math.round(accrued))
+    futureSeries.push(Math.round(calcFutureAccruals(pay, g, yr)))
+  }
+
+  const tickInterval = totalYears > 20 ? 5 : totalYears > 10 ? 2 : 1
+
+  // Vertical line at retirement age if early
+  const plugins = {}
+  if (retireAge < npa) {
+    const retireIdx = retireAge - age
+    plugins.annotation = {
+      annotations: {
+        retireLine: {
+          type: 'line',
+          xMin: retireIdx,
+          xMax: retireIdx,
+          borderColor: '#e07b39',
+          borderWidth: 2,
+          borderDash: [4, 4],
+        },
+      },
+    }
+  }
+
+  if (chartInstance) chartInstance.destroy()
+  const ctx = el('chart').getContext('2d')
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Already accrued',
+          data: accruedSeries,
+          backgroundColor: '#c8d8f5',
+          borderWidth: 0,
+          borderRadius: { topLeft: 2, topRight: 2 },
+          borderSkipped: false,
+        },
+        {
+          label: 'Future accruals',
+          data: futureSeries,
+          backgroundColor: '#3a6fd8',
+          borderWidth: 0,
+          borderRadius: { topLeft: 2, topRight: 2 },
+          borderSkipped: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 200, easing: 'easeOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        ...plugins,
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { family: "'Helvetica Neue', Helvetica, Arial, sans-serif", size: 12 },
+            padding: 16,
+            boxWidth: 12,
+            boxHeight: 12,
+            color: '#555',
+          },
+        },
+        tooltip: {
+          backgroundColor: 'rgba(20,20,20,0.88)',
+          titleFont: { family: "'Helvetica Neue', Helvetica, Arial, sans-serif", size: 12 },
+          bodyFont: { family: "'Helvetica Neue', Helvetica, Arial, sans-serif", size: 12 },
+          footerFont: { family: "'Helvetica Neue', Helvetica, Arial, sans-serif", size: 12, weight: '600' },
+          padding: 10,
+          callbacks: {
+            title(items) { return 'Age ' + items[0].label },
+            label(item) { return '  ' + item.dataset.label + ': ' + fmtPlain(item.raw) + '/yr' },
+            footer(items) {
+              const total = items.reduce((s, i) => s + i.raw, 0)
+              return 'Total: ' + fmtPlain(total) + '/yr'
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            font: { family: "'Helvetica Neue', Helvetica, Arial, sans-serif", size: 11 },
+            color: '#999',
+            maxRotation: 0,
+            callback(val, i) { return labels[i] % tickInterval === 0 ? labels[i] : '' },
+          },
+        },
+        y: {
+          stacked: true,
+          grid: { color: '#f0f0f0' },
+          border: { display: false },
+          ticks: {
+            font: { family: "'Helvetica Neue', Helvetica, Arial, sans-serif", size: 11 },
+            color: '#999',
+            callback(v) {
+              return v >= 1000 ? '£' + (v / 1000).toFixed(0) + 'k' : '£' + v
+            },
+          },
+        },
+      },
+    },
+  })
+}
+
+// Event wiring
+el('btn-alpha').addEventListener('click', () => {
+  scheme = 'alpha'
+  npaUserOverride = false
+  el('btn-alpha').classList.add('active')
+  el('btn-uss').classList.remove('active')
+  applySchemeUI()
+})
+
+el('btn-uss').addEventListener('click', () => {
+  scheme = 'uss'
+  npaUserOverride = false
+  el('btn-alpha').classList.remove('active')
+  el('btn-uss').classList.add('active')
+  applySchemeUI()
+})
+
+el('age').addEventListener('input', () => {
+  const age = parseFloat(el('age').value)
+  if (!isNaN(age) && !npaUserOverride) {
+    const npa = SCHEMES[scheme].getNpa(age)
+    el('npa').value = npa
+    updateNpaNote(age, npa)
+    syncSlider(age, npa)
+  }
+  calculate()
+})
+
+el('npa').addEventListener('input', () => {
+  npaUserOverride = true
+  const npa = parseInt(el('npa').value)
+  const age = parseFloat(el('age').value)
+  if (!isNaN(npa) && !isNaN(age)) {
+    const spa = spaFromAge(age)
+    const note = el('npa-note')
+    if (npa < spa) {
+      note.textContent = `Below SPA (${spa}) \u2014 benefits would be actuarially reduced from SPA`
+      note.className = 'field-note warning'
+    } else {
+      note.textContent = 'Manually adjusted'
+      note.className = 'field-note'
+    }
+    syncSlider(age, npa)
+  }
+  calculate()
+})
+
+el('retire-age').addEventListener('input', () => {
+  updateRetireHint(parseInt(el('retire-age').value), parseInt(el('npa').value))
+  calculate()
+})
+
+el('pay').addEventListener('input', calculate)
+el('accrued').addEventListener('input', calculate)
+el('real-growth').addEventListener('input', calculate)
+
+// Init
+applySchemeUI()
+</script>
+</body>
+</html>
