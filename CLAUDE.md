@@ -6,15 +6,20 @@ Guidance for Claude Code when working in this repository.
 
 A collection of standalone, single-file browser tools hosted via **GitHub Pages
 (Jekyll)**. Each tool is one self-contained `.html` file at the repo root. There
-is no build step, package manager, framework, or backend — everything runs
-client-side in the browser.
+is no build step, package manager, or backend — everything runs client-side in
+the browser.
 
 ## Conventions
 
 - **One file per tool.** Each page bundles its own HTML, CSS (in a `<style>`
-  block), and JavaScript (in a `<script>` block). No external CSS/JS files, no
-  CDN dependencies, no bundler.
-- **Vanilla JS only.** No React, no frameworks, no build tooling.
+  block), and JavaScript (in a `<script>` block). No local companion CSS/JS
+  files and no bundler — but see the CDN note below.
+- **CDN libraries are allowed.** You can pull in JS/CSS libraries from a CDN
+  (e.g. a charting or date library via `<script src="https://...">`) when it
+  genuinely helps. Keep the page working as a single file — no local build
+  artifacts. Prefer well-known, reliable CDNs and pin a version.
+- **No React.** Stick to vanilla JS (optionally aided by small CDN
+  libraries). No React, no JSX, no build tooling.
 - **Shared visual language.** Tools follow a common card-based design. Reuse the
   CSS custom properties and layout from an existing tool (e.g. `riegel.html`):
   - `:root` variables: `--primary: #2563eb`, `--bg: #f8fafc`, `--card: #ffffff`,
